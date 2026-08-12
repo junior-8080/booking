@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --brand:       #7c3565;
+  --brand-dark:  #5e274c;
+  --brand-light: #fdf4fb;
+  --brand-tint:  #f5e6f2;
+
+  --surface:     #ffffff;
+  --bg:          #f8f7f5;
+  --bg-subtle:   #f1ede9;
+  --border:      #e4dfd9;
+  --border-2:    #cfc8c1;
+
+  --text-1:      #1c1917;
+  --text-2:      #6b6560;
+  --text-3:      #a39d97;
+
+  --success-bg:  #f0fdf4;
+  --success-fg:  #15803d;
+  --danger-bg:   #fef2f2;
+  --danger-fg:   #dc2626;
+  --warning-bg:  #fffbeb;
+  --warning-fg:  #b45309;
+  --info-bg:     #eff6ff;
+  --info-fg:     #1d4ed8;
+  --neutral-bg:  #f4f4f5;
+  --neutral-fg:  #52525b;
+
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.05);
+  --shadow:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+::selection { background: var(--brand-tint); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
