@@ -84,10 +84,10 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="lp-hero lp-pad" style={{ padding: '96px 40px 80px', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 20, background: '#fdf4fb', border: '1px solid #f0d5ec', marginBottom: 28 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: BRAND, display: 'inline-block' }} />
-          <span style={{ fontSize: 13, color: BRAND_DARK, fontWeight: 500 }}>No payment gateway required</span>
-        </div>
+        {/*<div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 20, background: '#fdf4fb', border: '1px solid #f0d5ec', marginBottom: 28 }}>*/}
+        {/*  <span style={{ width: 6, height: 6, borderRadius: '50%', background: BRAND, display: 'inline-block' }} />*/}
+        {/*  <span style={{ fontSize: 13, color: BRAND_DARK, fontWeight: 500 }}>No payment gateway required</span>*/}
+        {/*</div>*/}
         <h1 style={{ fontSize: 'clamp(32px, 6vw, 58px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-1.5px', margin: '0 0 22px', color: '#1c1917' }}>
           Bookings that work the{' '}
           <span style={{ color: BRAND }}>way your business does</span>
