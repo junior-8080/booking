@@ -1,0 +1,322 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum TenantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum TenantUserRole {
+  TENANT_OWNER
+  TENANT_STAFF
+}
+
+enum TenantUserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum DepositType {
+  PERCENTAGE
+  FIXED
+}
+
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum AvailabilityExceptionType {
+  BLOCKED
+  CUSTOM_HOURS
+}
+
+enum PaymentSourceType {
+  MOBILE_MONEY
+  BANK_TRANSFER
+  ZELLE
+  VENMO
+  CASH_APP
+  PAYPAL
+  CASH
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  BOOKED
+  REJECTED
+}
+
+enum PaymentStatus {
+  AWAITING_REVIEW
+  CONFIRMED
+  REJECTED
+}
+
+enum NotificationRecipientType {
+  CLIENT
+  TENANT
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id                          String       @id @default(uuid()) @db.Uuid
+  name                        String
+  subdomain                   String       @unique
+  country_code                String
+  timezone                    String
+  default_currency            String
+  status                      TenantStatus @default(PENDING)
+  booking_confirmation_sla_hours Int       @default(48)
+  slot_hold_minutes           Int          @default(20)
+  settings                    Json?        @default("{}")
+  created_at                  DateTime     @default(now()) @db.Timestamptz
+  updated_at                  DateTime     @updatedAt @db.Timestamptz
+
+  brands               Brand[]
+  tenant_users         TenantUser[]
+  customers            Customer[]
+  services             Service[]
+  availabilities       Availability[]
+  availability_exceptions AvailabilityException[]
+  payment_sources      PaymentSource[]
+  bookings             Booking[]
+  payments             Payment[]
+  notifications        Notification[]
+
+  @@map("tenants")
+}
+
+model Brand {
+  id          String  @id @default(uuid()) @db.Uuid
+  tenant_id   String  @db.Uuid
+  name        String
+  logo_url    String?
+  description String?
+  is_primary  Boolean @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@map("brands")
+}
+
+model TenantUser {
+  id            String           @id @default(uuid()) @db.Uuid
+  tenant_id     String           @db.Uuid
+  email         String
+  password_hash String
+  full_name     String
+  role          TenantUserRole
+  permissions   Json?
+  status        TenantUserStatus @default(INVITED)
+  created_at    DateTime         @default(now()) @db.Timestamptz
+  updated_at    DateTime         @updatedAt @db.Timestamptz
+
+  tenant                  Tenant         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  confirmed_bookings      Booking[]      @relation("ConfirmedBy")
+  reviewed_payments       Payment[]      @relation("ReviewedBy")
+
+  @@unique([tenant_id, email])
+  @@map("tenant_users")
+}
+
+model Customer {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenant_id  String   @db.Uuid
+  full_name  String
+  email      String?
+  phone      String
+  notes      String?
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@unique([tenant_id, phone])
+  @@map("customers")
+}
+
+model Service {
+  id                String      @id @default(uuid()) @db.Uuid
+  tenant_id         String      @db.Uuid
+  brand_id          String      @db.Uuid
+  name              String
+  description       String?
+  image_url         String?
+  duration_minutes  Int
+  price_amount      Int
+  price_currency    String
+  deposit_type      DepositType
+  deposit_value     Int
+  is_active         Boolean     @default(true)
+  created_at        DateTime    @default(now()) @db.Timestamptz
+  updated_at        DateTime    @updatedAt @db.Timestamptz
+
+  tenant                  Tenant                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  brand                   Brand                   @relation(fields: [brand_id], references: [id], onDelete: Cascade)
+  availabilities          Availability[]
+  availability_exceptions AvailabilityException[]
+  bookings                Booking[]
+
+  @@map("services")
+}
+
+model Availability {
+  id                    String @id @default(uuid()) @db.Uuid
+  tenant_id             String @db.Uuid
+  service_id            String @db.Uuid
+  day_of_week           Int
+  start_time            String
+  end_time              String
+  slot_duration_minutes Int
+  capacity              Int    @default(1)
+  created_at            DateTime @default(now()) @db.Timestamptz
+  updated_at            DateTime @updatedAt @db.Timestamptz
+
+  tenant  Tenant  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+model AvailabilityException {
+  id         String                    @id @default(uuid()) @db.Uuid
+  tenant_id  String                    @db.Uuid
+  service_id String?                   @db.Uuid
+  date       DateTime                  @db.Date
+  type       AvailabilityExceptionType
+  start_time String?
+  end_time   String?
+  reason     String?
+  created_at DateTime                  @default(now()) @db.Timestamptz
+  updated_at DateTime                  @updatedAt @db.Timestamptz
+
+  tenant  Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@map("availability_exceptions")
+}
+
+model PaymentSource {
+  id            String            @id @default(uuid()) @db.Uuid
+  tenant_id     String            @db.Uuid
+  type          PaymentSourceType
+  label         String
+  details       Json
+  instructions  String?
+  is_active     Boolean           @default(true)
+  display_order Int               @default(0)
+  created_at    DateTime          @default(now()) @db.Timestamptz
+  updated_at    DateTime          @updatedAt @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("payment_sources")
+}
+
+model Booking {
+  id                   String        @id @default(uuid()) @db.Uuid
+  tenant_id            String        @db.Uuid
+  customer_id          String        @db.Uuid
+  service_id           String        @db.Uuid
+  slot_start           DateTime      @db.Timestamptz
+  slot_end             DateTime      @db.Timestamptz
+  status               BookingStatus @default(PENDING)
+  required_amount      Int
+  required_currency    String
+  reference_code       String        @unique
+  hold_expires_at      DateTime?     @db.Timestamptz
+  client_notes         String?
+  rejection_reason     String?
+  confirmed_by_user_id String?       @db.Uuid
+  confirmed_at         DateTime?     @db.Timestamptz
+  created_at           DateTime      @default(now()) @db.Timestamptz
+  updated_at           DateTime      @updatedAt @db.Timestamptz
+
+  tenant            Tenant      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  customer          Customer    @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  service           Service     @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  confirmed_by_user TenantUser? @relation("ConfirmedBy", fields: [confirmed_by_user_id], references: [id])
+  payments          Payment[]
+  notifications     Notification[]
+
+  @@map("bookings")
+}
+
+model Payment {
+  id                  String        @id @default(uuid()) @db.Uuid
+  tenant_id           String        @db.Uuid
+  booking_id          String        @db.Uuid
+  payment_source_id   String        @db.Uuid
+  amount              Int
+  currency            String
+  client_reference    String?
+  proof_url           String?
+  status              PaymentStatus @default(AWAITING_REVIEW)
+  reviewed_by_user_id String?       @db.Uuid
+  reviewed_at         DateTime?     @db.Timestamptz
+  created_at          DateTime      @default(now()) @db.Timestamptz
+  updated_at          DateTime      @updatedAt @db.Timestamptz
+
+  tenant          Tenant        @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  booking         Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  payment_source  PaymentSource @relation(fields: [payment_source_id], references: [id])
+  reviewed_by     TenantUser?   @relation("ReviewedBy", fields: [reviewed_by_user_id], references: [id])
+
+  @@map("payments")
+}
+
+model Notification {
+  id             String                    @id @default(uuid()) @db.Uuid
+  tenant_id      String                    @db.Uuid
+  booking_id     String?                   @db.Uuid
+  recipient_type NotificationRecipientType
+  channel        NotificationChannel
+  template       String
+  status         NotificationStatus        @default(QUEUED)
+  sent_at        DateTime?                 @db.Timestamptz
+  error_message  String?
+  created_at     DateTime                  @default(now()) @db.Timestamptz
+  updated_at     DateTime                  @updatedAt @db.Timestamptz
+
+  tenant  Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [booking_id], references: [id])
+
+  @@map("notifications")
+}
