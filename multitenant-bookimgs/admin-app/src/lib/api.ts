@@ -18,7 +18,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   };
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  const json = await res.json();
 
   if (res.status === 401) {
     localStorage.removeItem('token');
@@ -26,6 +25,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error('Session expired');
   }
 
+  if (res.status === 204) return undefined as T;
+
+  const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? 'Request failed');
   return json.data as T;
 }
@@ -119,17 +121,22 @@ export const adminApi = {
     subscription_expires_at: string | null;
     is_trial_expired: boolean;
     needs_payment: boolean;
+    current_plan: 'MONTHLY' | 'YEARLY' | null;
   }>('/billing/status'),
-  initializePayment: (email: string) =>
+  initializePayment: (email: string, plan: 'MONTHLY' | 'YEARLY') =>
     request<{ checkout_url: string }>('/billing/pay', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, plan }),
     }),
   verifyPayment: (reference: string) =>
     request<{ activated: boolean }>('/billing/verify', {
       method: 'POST',
       body: JSON.stringify({ reference }),
     }),
+
+  // Subscription plans (public catalog)
+  getSubscriptionPlans: (activeOnly = true) =>
+    request<import('../types').SubscriptionPlan[]>(`/subscription-plans${activeOnly ? '?active=true' : ''}`),
 
   // Tenant settings
   getTenantSettings: () => request<import('../types').TenantSettings>('/tenant/settings'),

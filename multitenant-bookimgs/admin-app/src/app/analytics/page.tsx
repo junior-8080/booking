@@ -25,11 +25,13 @@ export default function AnalyticsPage() {
   const [revenue, setRevenue] = useState<ServiceRevenue[]>([]);
   const [timeSeries, setTimeSeries] = useState<TimePoint[]>([]);
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
-    Promise.all([adminApi.getSummary(), adminApi.getRevenueByService()]).then(([s, r]) => {
+    Promise.all([adminApi.getSummary(), adminApi.getRevenueByService(), adminApi.getTenantSettings()]).then(([s, r, settings]) => {
       setSummary(s as Summary);
       setRevenue((r as ServiceRevenue[]).sort((a, b) => b.revenue - a.revenue));
+      setCurrency((settings as { default_currency: string }).default_currency);
     });
   }, []);
 
@@ -50,7 +52,7 @@ export default function AnalyticsPage() {
       {/* Stat cards */}
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
-          {STAT_CARDS(summary, 'USD').map(card => (
+          {STAT_CARDS(summary, currency).map(card => (
             <div key={card.label} style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: '18px 20px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{card.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.5px', lineHeight: 1.1, marginBottom: 4 }}>{card.value}</div>
@@ -105,7 +107,7 @@ export default function AnalyticsPage() {
                 <div key={i}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, marginBottom: 6 }}>
                     <span style={{ fontWeight: 500, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{r.service_name}</span>
-                    <span style={{ fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>{formatAmount(r.revenue, 'USD')}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>{formatAmount(r.revenue, currency)}</span>
                   </div>
                   <div style={{ height: 5, borderRadius: 3, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 3, background: 'var(--brand)', width: `${(r.revenue / maxRevenue) * 100}%`, opacity: 0.8 }} />

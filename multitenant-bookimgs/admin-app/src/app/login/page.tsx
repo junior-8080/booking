@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
@@ -18,6 +18,18 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    // Verify the token is still valid before redirecting
+    adminApi.getMe()
+      .then(() => router.replace('/bookings'))
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('subdomain');
+      });
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +62,15 @@ export default function LoginPage() {
             <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-1)', letterSpacing: '-0.3px' }}>BookImgs</span>
           </div>
 
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: 'color-mix(in srgb, var(--brand) 10%, transparent)', marginBottom: 18 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand)', display: 'inline-block' }} />
+            <span style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Booking management for service businesses</span>
+          </div>
+
           <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 6, color: 'var(--text-1)' }}>Welcome back</h1>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>Sign in to your dashboard.</p>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>
+            BookImgs lets clients book and pay a deposit online — you confirm from your dashboard in one click.
+          </p>
 
           {error && (
             <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -83,8 +102,8 @@ export default function LoginPage() {
               disabled={loading}
               style={{
                 marginTop: 4, padding: '11px', borderRadius: 8, border: 'none',
-                background: loading ? 'var(--border-2)' : 'var(--brand)',
-                color: '#fff', fontSize: 14, fontWeight: 600,
+                background: loading ? 'var(--neutral-bg)' : 'var(--brand-tint)',
+                color: loading ? 'var(--text-3)' : 'var(--brand-dark)', fontSize: 14, fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background 0.15s',
               }}

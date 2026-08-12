@@ -98,7 +98,7 @@ function RangeForm({
           <div style={{ position: 'relative' }}>
             <input
               type="number" min={1}
-              value={form.capacity}
+              value={form.capacity || ''}
               onFocus={e => e.target.select()}
               onChange={e => set('capacity', +e.target.value)}
               style={{ ...inp, width: 72, paddingRight: 36 }}
@@ -111,7 +111,7 @@ function RangeForm({
           <div style={{ position: 'relative' }}>
             <input
               type="number" min={5} step={5}
-              value={form.slot_duration_minutes}
+              value={form.slot_duration_minutes || ''}
               onFocus={e => e.target.select()}
               onChange={e => set('slot_duration_minutes', +e.target.value)}
               style={{ ...inp, width: 72, paddingRight: 32 }}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
 import type { Service, Brand } from '@/types';
@@ -58,19 +59,22 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [defaultCurrency, setDefaultCurrency] = useState('USD');
 
   const load = async () => {
-    const [s, b] = await Promise.all([adminApi.listServices(), adminApi.listBrands()]);
+    const [s, b, settings] = await Promise.all([adminApi.listServices(), adminApi.listBrands(), adminApi.getTenantSettings()]);
     setServices(s as Service[]);
     const brands = b as Brand[];
     const primary = brands.find(br => br.is_primary) ?? brands[0] ?? null;
     setPrimaryBrand(primary);
+    setDefaultCurrency((settings as { default_currency: string }).default_currency);
   };
 
   useEffect(() => { load(); }, []);
 
   const openCreate = () => {
-    setForm({ ...EMPTY_FORM, brand_id: primaryBrand?.id ?? '' });
+    setForm({ ...EMPTY_FORM, brand_id: primaryBrand?.id ?? '', price_currency: defaultCurrency });
     setEditing(null);
     setImageFile(null);
     setImagePreview('');
@@ -127,8 +131,9 @@ export default function ServicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Remove this service?')) return;
     await adminApi.deleteService(id);
+    setShowForm(false);
+    setConfirmDeleteId(null);
     load();
   };
 
@@ -145,7 +150,7 @@ export default function ServicesPage() {
         {!showForm && (
           <button
             onClick={openCreate}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             New service
@@ -238,7 +243,7 @@ export default function ServicesPage() {
                   <input
                     type="number"
                     min={1}
-                    value={form.duration_minutes}
+                    value={form.duration_minutes || ''}
                     onFocus={e => e.target.select()}
                     onChange={e => s('duration_minutes', +e.target.value)}
                     required
@@ -254,7 +259,7 @@ export default function ServicesPage() {
                     type="number"
                     min={0}
                     step={0.01}
-                    value={form.price_amount}
+                    value={form.price_amount || ''}
                     onFocus={e => e.target.select()}
                     onChange={e => s('price_amount', +e.target.value)}
                     required
@@ -313,7 +318,7 @@ export default function ServicesPage() {
                     type="number"
                     min={form.deposit_type === 'PERCENTAGE' ? 1 : 0}
                     max={form.deposit_type === 'PERCENTAGE' ? 100 : undefined}
-                    value={form.deposit_value}
+                    value={form.deposit_value || ''}
                     onFocus={e => e.target.select()}
                     onChange={e => s('deposit_value', +e.target.value)}
                     required
@@ -374,92 +379,108 @@ export default function ServicesPage() {
             )}
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontSize: 14, opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? 'Saving…' : editing ? 'Save changes' : 'Create service'}
-              </button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(editing)}
+                  style={{ padding: '10px 18px', borderRadius: 9, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
+                >
+                  Delete service
+                </button>
+              ) : <span />}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: 'var(--brand-tint)', color: 'var(--brand-dark)', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontSize: 14, opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? 'Saving…' : editing ? 'Save changes' : 'Create service'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
       )}
 
-      {/* Service list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {services.length === 0 && !showForm && (
-          <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--text-3)' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 14px', display: 'block', opacity: 0.35 }}>
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No services yet</div>
-            <div style={{ fontSize: 13 }}>Add your first service to start accepting bookings.</div>
-          </div>
-        )}
+      {/* Service grid */}
+      {services.length === 0 && !showForm && (
+        <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--text-3)' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 14px', display: 'block', opacity: 0.35 }}>
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No services yet</div>
+          <div style={{ fontSize: 13 }}>Add your first service to start accepting bookings.</div>
+        </div>
+      )}
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
         {services.map(svc => (
-          <div
+          <button
             key={svc.id}
+            onClick={() => openEdit(svc)}
             style={{
-              background: 'var(--surface)',
-              borderRadius: 12,
+              borderRadius: 14,
+              overflow: 'hidden',
+              position: 'relative',
+              height: 210,
+              background: svc.image_url
+                ? `url(${svc.image_url}) center/cover no-repeat`
+                : `linear-gradient(135deg, var(--brand-tint) 0%, var(--brand) 100%)`,
               border: '1px solid var(--border)',
-              padding: '16px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              borderLeft: `3px solid ${svc.is_active ? 'var(--brand)' : 'var(--border)'}`,
+              boxShadow: 'var(--shadow)',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'block',
+              width: '100%',
+              textAlign: 'left',
             }}
-            className="service-item"
           >
-            {svc.image_url && (
-              <div style={{ width: 56, height: 56, borderRadius: 10, flexShrink: 0, background: `url(${svc.image_url}) center/cover no-repeat`, border: '1px solid var(--border)' }} />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-1)' }}>{svc.name}</span>
-                {!svc.is_active && (
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--neutral-bg)', color: 'var(--neutral-fg)', fontWeight: 500 }}>Inactive</span>
-                )}
+            {/* Gradient overlay */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }} />
+
+            {/* Inactive badge */}
+            {!svc.is_active && (
+              <div style={{ position: 'absolute', top: 10, left: 10 }}>
+                <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.8)', fontWeight: 500, backdropFilter: 'blur(4px)' }}>
+                  Inactive
+                </span>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            )}
+
+            {/* Bottom labels */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 14px 13px' }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#fff', marginBottom: 4, letterSpacing: '-0.2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc.name}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                 <span>{svc.duration_minutes} min</span>
-                <span style={{ color: 'var(--border-2)' }}>·</span>
-                <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{formatAmount(svc.price_amount, svc.price_currency)}</span>
-                <span style={{ color: 'var(--border-2)' }}>·</span>
-                <span>Deposit: {svc.deposit_type === 'PERCENTAGE' ? `${svc.deposit_value}%` : formatAmount(svc.deposit_value, svc.price_currency)}</span>
+                <span style={{ opacity: 0.5 }}>·</span>
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{formatAmount(svc.price_amount, svc.price_currency)}</span>
+                <span style={{ opacity: 0.5 }}>·</span>
+                <span>{svc.deposit_type === 'PERCENTAGE' ? `${svc.deposit_value}% deposit` : `${formatAmount(svc.deposit_value, svc.price_currency)} deposit`}</span>
               </div>
               {svc.description && (
-                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc.description}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc.description}</div>
               )}
             </div>
-            <div className="service-item-actions">
-              <button
-                onClick={() => openEdit(svc)}
-                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(svc.id)}
-                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
-              >
-                Remove
-              </button>
-            </div>
-          </div>
+          </button>
         ))}
       </div>
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete service?"
+        message="This service will be permanently removed. Existing bookings are not affected."
+        confirmLabel="Delete service"
+        onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </DashboardShell>
   );
 }

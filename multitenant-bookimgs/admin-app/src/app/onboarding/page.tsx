@@ -200,7 +200,7 @@ export default function OnboardingPage() {
                   {subdomain && (
                     <p style={{ marginTop: 7, fontSize: 12, color: 'var(--text-3)' }}>
                       Booking link:{' '}
-                      <span style={{ color: 'var(--brand)', fontWeight: 600 }}>bookimgs.app/book/{subdomain}</span>
+                      <span style={{ color: 'var(--brand)', fontWeight: 600 }}>bookaata.app/book/{subdomain}</span>
                     </p>
                   )}
                 </div>

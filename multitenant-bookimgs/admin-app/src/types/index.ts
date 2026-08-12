@@ -1,4 +1,4 @@
-export interface Brand { id: string; name: string; logo_url: string | null; description: string | null; is_primary: boolean; }
+export interface Brand { id: string; name: string; logo_url: string | null; description: string | null; terms_conditions: string | null; is_primary: boolean; }
 export interface Slot { start: string; end: string; available: boolean; }
 export interface Service { id: string; brand_id: string; name: string; description: string | null; image_url: string | null; duration_minutes: number; price_amount: number; price_currency: string; deposit_type: 'PERCENTAGE' | 'FIXED'; deposit_value: number; is_active: boolean; brand?: Brand; }
 export interface Customer { id: string; full_name: string; email: string | null; phone: string; notes: string | null; }
@@ -43,6 +43,16 @@ export interface TenantSettings {
   default_currency: string;
   slot_hold_minutes: number;
   booking_confirmation_sla_hours: number;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  interval: 'MONTHLY' | 'YEARLY';
+  amount: number;
+  currency: string;
+  description: string | null;
+  is_active: boolean;
 }
 
 export interface CountryOption {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { adminApi } from '@/lib/api';
 import type { PaymentSource } from '@/types';
 
@@ -27,6 +28,7 @@ export default function PaymentSourcesPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = async () => setSources(await adminApi.listPaymentSources());
   useEffect(() => { load(); }, []);
@@ -57,7 +59,7 @@ export default function PaymentSourcesPage() {
         </div>
         <button
           onClick={openCreate}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 8, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Add source
@@ -141,11 +143,23 @@ export default function PaymentSourcesPage() {
                 {ps.is_active ? 'Disable' : 'Enable'}
               </button>
               <button onClick={() => openEdit(ps)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Edit</button>
-              <button onClick={() => { if (confirm('Delete this payment source?')) adminApi.deletePaymentSource(ps.id).then(load); }} style={{ padding: '7px 13px', borderRadius: 7, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Delete</button>
+              <button onClick={() => setConfirmDeleteId(ps.id)} style={{ padding: '7px 13px', borderRadius: 7, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Delete</button>
             </div>
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete payment source?"
+        message="This payment source will be permanently removed."
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (confirmDeleteId) adminApi.deletePaymentSource(confirmDeleteId).then(load);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </DashboardShell>
   );
 }

@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const [brand, setBrand] = useState<Brand | null>(null);
 
   // Profile form (brand)
-  const [profileForm, setProfileForm] = useState({ name: '', description: '' });
+  const [profileForm, setProfileForm] = useState({ name: '', description: '', terms_conditions: '' });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
@@ -63,7 +63,7 @@ export default function SettingsPage() {
         const primary = b.find(br => br.is_primary) ?? b[0] ?? null;
         setBrand(primary);
         setLogoPreview(primary?.logo_url ?? null);
-        setProfileForm({ name: primary?.name ?? s.name, description: primary?.description ?? '' });
+        setProfileForm({ name: primary?.name ?? s.name, description: primary?.description ?? '', terms_conditions: primary?.terms_conditions ?? '' });
         setSettingsForm({
           country: s.country_code,
           timezone: s.timezone,
@@ -111,6 +111,7 @@ export default function SettingsPage() {
       const brandData = {
         name: profileForm.name,
         description: profileForm.description || undefined,
+        terms_conditions: profileForm.terms_conditions || undefined,
         ...(logo_url !== undefined ? { logo_url } : {}),
       };
 
@@ -141,7 +142,7 @@ export default function SettingsPage() {
 
   const copyLink = () => {
     if (!settings) return;
-    navigator.clipboard.writeText(`bookimgs.app/book/${settings.subdomain}`).catch(() => {});
+    navigator.clipboard.writeText(`bookaata.app/book/${settings.subdomain}`).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -229,10 +230,21 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
+                <label style={lbl}>Terms & Conditions <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>
+                <textarea
+                  value={profileForm.terms_conditions}
+                  onChange={e => setProfileForm(p => ({ ...p, terms_conditions: e.target.value }))}
+                  placeholder="Enter your booking terms, cancellation policy, or anything customers should agree to before booking."
+                  rows={6}
+                  style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }}
+                />
+                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Shown as a "T&C" button on your public booking page.</p>
+              </div>
+              <div>
                 <label style={lbl}>Booking link</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ ...inp, flex: 1, color: 'var(--text-2)', background: 'var(--surface-2, var(--surface))', cursor: 'default', userSelect: 'all' }}>
-                    bookimgs.app/book/{settings.subdomain}
+                    bookaata.app/book/{settings.subdomain}
                   </div>
                   <button
                     onClick={copyLink}
@@ -291,7 +303,7 @@ export default function SettingsPage() {
                 <div style={{ position: 'relative' }}>
                   <input
                     type="number" min={5} max={240}
-                    value={settingsForm.slot_hold_minutes}
+                    value={settingsForm.slot_hold_minutes || ''}
                     onFocus={e => e.target.select()}
                     onChange={e => setSettingsForm(p => ({ ...p, slot_hold_minutes: +e.target.value }))}
                     style={{ ...inp, paddingRight: 44 }}
@@ -305,7 +317,7 @@ export default function SettingsPage() {
                 <div style={{ position: 'relative' }}>
                   <input
                     type="number" min={1} max={168}
-                    value={settingsForm.booking_confirmation_sla_hours}
+                    value={settingsForm.booking_confirmation_sla_hours || ''}
                     onFocus={e => e.target.select()}
                     onChange={e => setSettingsForm(p => ({ ...p, booking_confirmation_sla_hours: +e.target.value }))}
                     style={{ ...inp, paddingRight: 44 }}

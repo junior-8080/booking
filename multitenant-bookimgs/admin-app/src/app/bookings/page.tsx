@@ -76,6 +76,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
 
   const latestPayment = booking.payments.at(-1);
 
@@ -139,10 +140,36 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
                 <Field label="Status" value={latestPayment.status} />
               </div>
               {latestPayment.proof_url && (
-                <a href={latestPayment.proof_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12, fontSize: 13, color: 'var(--brand)', fontWeight: 500 }}>
+                <button
+                  onClick={() => setProofUrl(latestPayment.proof_url!)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12, fontSize: 13, color: 'var(--brand)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                   View proof
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                </a>
+                </button>
+              )}
+
+              {proofUrl && (
+                <div
+                  onClick={() => setProofUrl(null)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+                >
+                  <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => setProofUrl(null)}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"/></svg>
+                      </button>
+                    </div>
+                    <img
+                      src={proofUrl}
+                      alt="Payment proof"
+                      style={{ maxWidth: '100%', maxHeight: 'calc(90vh - 60px)', borderRadius: 12, objectFit: 'contain', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -159,7 +186,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
               <button
                 onClick={confirm}
                 disabled={loading}
-                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--success-fg)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--success-bg)', color: 'var(--success-fg)', fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                 Confirm
@@ -167,7 +194,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
               <button
                 onClick={reject}
                 disabled={loading || !rejectReason.trim()}
-                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejectReason.trim() ? 'var(--danger-fg)' : 'var(--neutral-bg)', color: rejectReason.trim() ? '#fff' : 'var(--text-3)', fontWeight: 600, cursor: rejectReason.trim() ? 'pointer' : 'not-allowed', fontSize: 13 }}
+                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejectReason.trim() ? 'var(--danger-bg)' : 'var(--neutral-bg)', color: rejectReason.trim() ? 'var(--danger-fg)' : 'var(--text-3)', fontWeight: 600, cursor: rejectReason.trim() ? 'pointer' : 'not-allowed', fontSize: 13 }}
               >
                 Reject
               </button>
@@ -183,6 +210,8 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [tab, setTab] = useState<BookingStatus | ''>('PENDING');
   const [loading, setLoading] = useState(true);
+  const [subdomain, setSubdomain] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -191,6 +220,14 @@ export default function BookingsPage() {
   };
 
   useEffect(() => { load(); }, [tab]);
+  useEffect(() => { setSubdomain(localStorage.getItem('subdomain') ?? ''); }, []);
+
+  const publicUrl = `bookaata.app/book/${subdomain}`;
+  const copy = () => {
+    navigator.clipboard.writeText(`https://${publicUrl}`).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <DashboardShell>
@@ -198,6 +235,18 @@ export default function BookingsPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4, color: 'var(--text-1)' }}>Bookings</h1>
         <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Review payment proofs and manage appointments.</p>
       </div>
+
+      {/* Public booking link */}
+      {subdomain && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+          <span style={{ flex: 1, fontSize: 13, color: 'var(--text-2)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{publicUrl}</span>
+          <a href={`https://${publicUrl}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>Open</a>
+          <button onClick={copy} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)', background: copied ? 'var(--success-bg)' : 'var(--bg)', color: copied ? 'var(--success-fg)' : 'var(--text-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s' }}>
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div
@@ -211,11 +260,11 @@ export default function BookingsPage() {
               key={t.value}
               onClick={() => setTab(t.value)}
               style={{
-                padding: '18px 16px',
-                borderRadius: 12,
-                border: `2px solid ${active ? t.activeBorder : 'var(--border)'}`,
-                fontSize: 15,
-                fontWeight: active ? 700 : 500,
+                padding: '10px 12px',
+                borderRadius: 9,
+                border: `1.5px solid ${active ? t.activeBorder : 'var(--border)'}`,
+                fontSize: 13,
+                fontWeight: active ? 600 : 500,
                 cursor: 'pointer',
                 background: active ? t.activeBg : 'var(--surface)',
                 color: active ? t.activeColor : 'var(--text-2)',
@@ -223,14 +272,14 @@ export default function BookingsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 9,
+                gap: 7,
                 boxShadow: active ? 'var(--shadow)' : 'var(--shadow-sm)',
-                letterSpacing: '-0.2px',
+                letterSpacing: '-0.1px',
               }}
             >
               <span style={{
-                width: 10,
-                height: 10,
+                width: 7,
+                height: 7,
                 borderRadius: '50%',
                 background: active ? t.dot : 'var(--border-2)',
                 flexShrink: 0,

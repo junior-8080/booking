@@ -198,6 +198,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const [error, setError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [bookingsBlocked, setBookingsBlocked] = useState(false);
+  const [showTc, setShowTc] = useState(false);
 
   useEffect(() => {
     const storageKey = `bookimgs_pending_${subdomain}`;
@@ -801,6 +802,50 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
               )}
             </div>
           </div>
+
+          {/* T&C button — always visible once brand loads */}
+          {primaryBrand && (
+            <button
+              onClick={() => setShowTc(true)}
+              style={{
+                position: 'fixed', bottom: 20, right: 20, zIndex: 50,
+                padding: '7px 13px', borderRadius: 20,
+                border: '1px solid rgba(0,0,0,0.12)',
+                background: 'rgba(0,0,0,0.28)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                fontSize: 12, fontWeight: 600, color: '#fff',
+                cursor: 'pointer', letterSpacing: 0.2,
+              }}
+            >
+              T&amp;C
+            </button>
+          )}
+
+          {/* T&C modal */}
+          {showTc && (
+            <div
+              onClick={() => setShowTc(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ width: '100%', maxWidth: 440, maxHeight: '80vh', borderRadius: '20px 20px 0 0', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: 'oklch(22% 0.015 50)' }}>Terms & Conditions</div>
+                  <button onClick={() => setShowTc(false)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="oklch(40% 0.01 50)" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <div style={{ overflowY: 'auto', padding: '18px 20px 32px', fontSize: 14, color: 'oklch(30% 0.015 50)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+                  {primaryBrand?.terms_conditions || (
+                    <span style={{ color: 'oklch(58% 0.02 50)', fontStyle: 'italic' }}>No terms & conditions have been set for this business.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sticky CTA */}
           {(['details', 'payment', 'proof'] as Step[]).includes(step) && !(step === 'details' && booking) && (
