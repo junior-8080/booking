@@ -102,6 +102,7 @@ export default function OnboardingPage() {
       if (!res.success) throw new Error(res.error ?? 'Registration failed');
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('subdomain', res.data.subdomain);
+      localStorage.setItem('email', form.email);
       router.push('/bookings');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');

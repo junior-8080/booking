@@ -87,7 +87,7 @@ export default function ServicesPage() {
       price_amount: svc.price_amount / 100,
       price_currency: svc.price_currency,
       deposit_type: svc.deposit_type,
-      deposit_value: svc.deposit_value,
+      deposit_value: svc.deposit_type === 'FIXED' ? svc.deposit_value / 100 : svc.deposit_value,
       is_active: svc.is_active,
     });
     setEditing(svc.id);
@@ -115,6 +115,7 @@ export default function ServicesPage() {
         ...form,
         image_url: image_url || null,
         price_amount: Math.round(form.price_amount * 100),
+        deposit_value: form.deposit_type === 'FIXED' ? Math.round(form.deposit_value * 100) : form.deposit_value,
       };
       if (editing) await adminApi.updateService(editing, payload);
       else await adminApi.createService(payload);
@@ -282,7 +283,11 @@ export default function ServicesPage() {
                     <button
                       key={type}
                       type="button"
-                      onClick={() => s('deposit_type', type)}
+                      onClick={() => setForm(p => ({
+                        ...p,
+                        deposit_type: type,
+                        deposit_value: p.deposit_type !== type ? (type === 'PERCENTAGE' ? 30 : 0) : p.deposit_value,
+                      }))}
                       style={{
                         flex: 1,
                         padding: '9px 0',
@@ -318,6 +323,17 @@ export default function ServicesPage() {
                     {form.deposit_type === 'PERCENTAGE' ? '%' : form.price_currency}
                   </span>
                 </div>
+                {form.price_amount > 0 && form.deposit_value > 0 && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-3)' }}>
+                    {'Client pays '}
+                    <span style={{ fontWeight: 600, color: 'var(--brand)' }}>
+                      {form.deposit_type === 'PERCENTAGE'
+                        ? formatAmount(Math.round(form.price_amount * 100 * form.deposit_value / 100), form.price_currency)
+                        : formatAmount(Math.round(form.deposit_value * 100), form.price_currency)}
+                    </span>
+                    {' as deposit'}
+                  </div>
+                )}
               </div>
             </Section>
 

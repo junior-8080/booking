@@ -153,6 +153,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}
                 placeholder="Rejection reason (required to reject)"
+                maxLength={300}
                 style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface)', outline: 'none', color: 'var(--text-1)' }}
               />
               <button

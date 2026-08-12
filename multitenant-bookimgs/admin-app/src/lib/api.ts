@@ -109,6 +109,28 @@ export const adminApi = {
   updateBrand: (id: string, data: Partial<{ name: string; logo_url: string | null; description: string; is_primary: boolean }>) =>
     request<import('../types').Brand>(`/brands/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
+  // Auth — current user profile
+  getMe: () => request<{ id: string; full_name: string; email: string; role: string }>('/auth/me'),
+
+  // Billing
+  getBillingStatus: () => request<{
+    subscription_status: 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED';
+    trial_ends_at: string | null;
+    subscription_expires_at: string | null;
+    is_trial_expired: boolean;
+    needs_payment: boolean;
+  }>('/billing/status'),
+  initializePayment: (email: string) =>
+    request<{ checkout_url: string }>('/billing/pay', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  verifyPayment: (reference: string) =>
+    request<{ activated: boolean }>('/billing/verify', {
+      method: 'POST',
+      body: JSON.stringify({ reference }),
+    }),
+
   // Tenant settings
   getTenantSettings: () => request<import('../types').TenantSettings>('/tenant/settings'),
   updateTenantSettings: (data: unknown) => request<import('../types').TenantSettings>('/tenant/settings', { method: 'PATCH', body: JSON.stringify(data) }),

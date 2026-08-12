@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
+import { adminApi } from '@/lib/api';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -10,8 +11,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem('token')) router.replace('/login');
-  }, [router]);
+    if (!localStorage.getItem('token')) { router.replace('/login'); return; }
+    // Redirect to /billing if trial has expired and user is not already there
+    if (pathname === '/billing') return;
+    adminApi.getBillingStatus().then(s => {
+      if (s.needs_payment) router.replace('/billing');
+    }).catch(() => {});
+  }, [router, pathname]);
 
   useEffect(() => {
     setSidebarOpen(false);

@@ -197,6 +197,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [bookingsBlocked, setBookingsBlocked] = useState(false);
 
   useEffect(() => {
     const storageKey = `bookimgs_pending_${subdomain}`;
@@ -209,13 +210,16 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
     })();
 
     Promise.all([
+      bookingApi.getTenantStatus(subdomain),
       bookingApi.getBrands(subdomain),
       bookingApi.getServices(subdomain),
       bookingApi.getPaymentSources(subdomain),
       savedRef ? bookingApi.getBookingByRef(subdomain, savedRef).catch(() => null) : Promise.resolve(null),
     ])
-      .then(([b, s, ps, resumed]) => {
-        setBrands(b); setServices(s); setPaymentSources(ps); setSelectedSourceId(ps[0]?.id ?? null);
+      .then(([status, b, s, ps, resumed]) => {
+        setBrands(b);
+        if (!status.is_accepting_bookings) { setBookingsBlocked(true); return; }
+        setServices(s); setPaymentSources(ps); setSelectedSourceId(ps[0]?.id ?? null);
         if (!resumed && urlServiceId) {
           const svc = s.find(sv => sv.id === urlServiceId);
           if (svc) {
@@ -383,6 +387,51 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
           <p style={{ color: MUTED, fontSize: 14, lineHeight: 1.6 }}>{pageError}</p>
         </div>
       </div>
+    );
+  }
+
+  if (bookingsBlocked) {
+    const brand = brands.find(b => b.is_primary) ?? brands[0];
+    return (
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Work+Sans:wght@400;500&display=swap');
+          @keyframes orb1 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(18px,-14px) scale(1.04);} }
+          @keyframes orb2 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-14px,18px) scale(1.03);} }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { -webkit-font-smoothing: antialiased; }
+        `}</style>
+        <div style={{ position: 'fixed', inset: 0, background: 'linear-gradient(148deg, oklch(93% 0.045 300) 0%, oklch(97% 0.012 60) 55%, oklch(95% 0.032 195) 100%)', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', width: 440, height: 440, borderRadius: '50%', background: 'oklch(84% 0.11 310)', filter: 'blur(90px)', opacity: 0.38, top: -130, right: -90, animation: 'orb1 9s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', width: 340, height: 340, borderRadius: '50%', background: 'oklch(87% 0.09 195)', filter: 'blur(75px)', opacity: 0.32, bottom: 30, left: -90, animation: 'orb2 11s ease-in-out infinite' }} />
+          <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif", padding: 24 }}>
+            <div style={{ textAlign: 'center', maxWidth: 340 }}>
+              {brand && (
+                <div style={{ width: 72, height: 72, borderRadius: 20, background: A, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', overflow: 'hidden', boxShadow: `0 8px 32px ${A}55` }}>
+                  {brand.logo_url
+                    ? <img src={brand.logo_url} alt={brand.name} style={{ width: 72, height: 72, objectFit: 'cover' }} />
+                    : <span style={{ color: 'white', fontSize: 26, fontWeight: 700, fontFamily: "'Sora', sans-serif" }}>{brand.name.slice(0, 2).toUpperCase()}</span>
+                  }
+                </div>
+              )}
+              {brand && <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700, marginBottom: 24, color: 'oklch(22% 0.015 50)' }}>{brand.name}</div>}
+
+              <div style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(18px) saturate(160%)', WebkitBackdropFilter: 'blur(18px) saturate(160%)', border: '1px solid rgba(255,255,255,0.88)', borderRadius: 20, padding: '28px 24px', boxShadow: '0 4px 32px rgba(0,0,0,0.08)' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'oklch(94% 0.03 60)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 10, color: 'oklch(22% 0.015 50)' }}>Bookings unavailable</h2>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>
+                  This booking page is temporarily unavailable. Please contact the business directly to make an appointment.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 

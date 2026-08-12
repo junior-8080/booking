@@ -28,6 +28,7 @@ export default function LoginPage() {
       if (!res.success) throw new Error(res.error ?? 'Invalid credentials');
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('subdomain', res.data.subdomain);
+      localStorage.setItem('email', form.email);
       router.push('/bookings');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed');

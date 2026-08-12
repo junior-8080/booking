@@ -20,6 +20,9 @@ async function request<T>(path: string, subdomain: string, options?: RequestInit
 import type { Brand, Service, Slot, PaymentSource, Booking, Customer, Payment } from '@/types';
 
 export const bookingApi = {
+  getTenantStatus: (subdomain: string) =>
+    request<{ is_accepting_bookings: boolean }>('/tenant/public-status', subdomain),
+
   getBrands: (subdomain: string) =>
     request<Brand[]>('/brands', subdomain),
 
