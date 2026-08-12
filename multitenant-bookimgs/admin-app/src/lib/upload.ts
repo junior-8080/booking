@@ -5,8 +5,12 @@ export async function uploadToR2(file: File, category: UploadCategory): Promise<
   body.append('file', file);
   body.append('category', category);
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const res = await fetch('/api/upload', {
     method: 'POST',
+    headers,
     body,
   });
 

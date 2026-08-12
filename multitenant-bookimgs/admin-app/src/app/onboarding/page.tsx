@@ -125,7 +125,7 @@ export default function OnboardingPage() {
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Bk</span>
           </div>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>BookImgs</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Bookaata</span>
         </div>
 
         <div style={{ flex: 1 }}>
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
               <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>Bk</span>
               </div>
-              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>BookImgs</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>Bookaata</span>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               {STEPS.map((_, i) => (

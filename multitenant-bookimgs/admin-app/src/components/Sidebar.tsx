@@ -77,7 +77,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <span style={{ color: '#fdf4fb', fontWeight: 700, fontSize: 14, letterSpacing: '-0.5px' }}>Bk</span>
           </div>
           <div>
-            <div style={{ color: '#f5f4f2', fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>BookImgs</div>
+            <div style={{ color: '#f5f4f2', fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>Bookaata</div>
             {subdomain && <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 1 }}>{subdomain}</div>}
           </div>
         </div>

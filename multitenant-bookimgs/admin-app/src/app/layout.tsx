@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BookImgs — Booking management',
+  title: 'Bookaata — Booking management',
   description: 'Professional booking management for service businesses',
 };
 

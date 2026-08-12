@@ -130,7 +130,7 @@ function BillingPageInner() {
 
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', color: 'var(--text-1)', marginBottom: 4 }}>Billing</h1>
-        <p style={{ fontSize: 14, color: 'var(--text-3)' }}>Manage your BookImgs subscription.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-3)' }}>Manage your Bookaata subscription.</p>
       </div>
 
       {justSubscribed && (

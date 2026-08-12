@@ -59,7 +59,7 @@ export default function LoginPage() {
             <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fdf4fb', fontWeight: 700, fontSize: 14 }}>Bk</span>
             </div>
-            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-1)', letterSpacing: '-0.3px' }}>BookImgs</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-1)', letterSpacing: '-0.3px' }}>Bookaata</span>
           </div>
 
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: 'color-mix(in srgb, var(--brand) 10%, transparent)', marginBottom: 18 }}>
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
           <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 6, color: 'var(--text-1)' }}>Welcome back</h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>
-            BookImgs lets clients book and pay a deposit online — you confirm from your dashboard in one click.
+            Bookaata lets clients book and pay a deposit online — you confirm from your dashboard in one click.
           </p>
 
           {error && (
