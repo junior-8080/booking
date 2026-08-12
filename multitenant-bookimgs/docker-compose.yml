@@ -28,6 +28,19 @@ services:
       timeout: 3s
       retries: 5
 
+  migrate:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    command: npx prisma migrate deploy
+    env_file:
+      - .env
+      - ./api/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
   api:
     build:
       context: ./api
@@ -43,6 +56,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
