@@ -157,6 +157,20 @@ export class BookingService extends BaseRepository {
     if (booking.status !== 'PENDING') {
       throw new ValidationError(`Cannot submit proof for a booking in ${booking.status} status`);
     }
+    if (params.currency !== booking.required_currency) {
+      throw new ValidationError(`Payment currency must be ${booking.required_currency}`);
+    }
+    if (params.amount < booking.required_amount) {
+      throw new ValidationError(`Payment amount is below the required deposit`);
+    }
+
+    // Prevent duplicate proof submissions while one is still under review
+    const pendingProof = await this.db.payment.findFirst({
+      where: { booking_id: params.bookingId, status: 'AWAITING_REVIEW' },
+    } as Parameters<typeof this.db.payment.findFirst>[0]);
+    if (pendingProof) {
+      throw new ConflictError('A payment proof is already under review for this booking');
+    }
 
     const [payment] = await Promise.all([
       this.db.payment.create({
@@ -204,6 +218,14 @@ export class BookingService extends BaseRepository {
       throw new ValidationError(`Cannot confirm a booking in ${booking.status} status`);
     }
 
+    const payment = await this.db.payment.findFirst({
+      where: { id: params.paymentId },
+    } as Parameters<typeof this.db.payment.findFirst>[0]);
+    if (!payment || payment.booking_id !== params.bookingId) throw new NotFoundError('Payment');
+    if (payment.status !== 'AWAITING_REVIEW') {
+      throw new ValidationError(`Payment has already been ${payment.status.toLowerCase()}`);
+    }
+
     const now = new Date();
 
     await Promise.all([
@@ -244,6 +266,14 @@ export class BookingService extends BaseRepository {
     const booking = await this.findById(params.bookingId);
     if (booking.status !== 'PENDING') {
       throw new ValidationError(`Cannot reject a booking in ${booking.status} status`);
+    }
+
+    const payment = await this.db.payment.findFirst({
+      where: { id: params.paymentId },
+    } as Parameters<typeof this.db.payment.findFirst>[0]);
+    if (!payment || payment.booking_id !== params.bookingId) throw new NotFoundError('Payment');
+    if (payment.status !== 'AWAITING_REVIEW') {
+      throw new ValidationError(`Payment has already been ${payment.status.toLowerCase()}`);
     }
 
     const now = new Date();

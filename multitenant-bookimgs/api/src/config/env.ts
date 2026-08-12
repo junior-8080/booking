@@ -36,6 +36,11 @@ const EnvSchema = z.object({
   R2_BUCKET_NAME: z.string().min(1),
   R2_PUBLIC_URL: z.string().url(),
 
+  // Paystack
+  PAYSTACK_SECRET_KEY: z.string().optional(),
+  // Callback URL after Paystack checkout (your admin app billing page)
+  BILLING_CALLBACK_URL: z.string().url().optional(),
+
   // App base URL for subdomain resolution
   APP_BASE_DOMAIN: z.string().default('localhost'),
 

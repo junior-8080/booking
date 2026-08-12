@@ -19,8 +19,14 @@ export class TenantController extends BaseController {
   }
 
   protected registerRoutes(): void {
+    this.router.get('/public-status', this.bind(this.getPublicStatus));
     this.router.get('/settings', requireAuth, this.bind(this.getSettings));
     this.router.patch('/settings', requireAuth, requireRole('TENANT_OWNER'), this.bind(this.updateSettings));
+  }
+
+  private async getPublicStatus(req: Request, res: Response): Promise<void> {
+    const data = await this.tenantService.getPublicStatus(req.tenantId);
+    this.ok(res, data);
   }
 
   private async getSettings(req: Request, res: Response): Promise<void> {

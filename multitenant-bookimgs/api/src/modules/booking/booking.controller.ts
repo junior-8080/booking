@@ -9,24 +9,25 @@ const CreateBookingSchema = z.object({
   service_id: z.string().uuid(),
   slot_start: z.string().datetime(),
   customer: z.object({
-    full_name: z.string().min(1),
-    phone: z.string().min(6),
-    email: z.string().email().optional(),
+    full_name: z.string().min(1).max(120),
+    phone: z.string().min(6).max(20),
+    email: z.string().email().max(255).optional(),
   }),
-  client_notes: z.string().optional(),
+  client_notes: z.string().max(500).optional(),
 });
 
 const SubmitProofSchema = z.object({
   payment_source_id: z.string().uuid(),
   amount: z.number().int().positive(),
   currency: z.string().length(3),
-  client_reference: z.string().optional(),
+  client_reference: z.string().max(100).optional(),
   proof_url: z.string().url().optional(),
 });
 
-const ReviewSchema = z.object({
+const ConfirmSchema = z.object({ payment_id: z.string().uuid() });
+const RejectSchema = z.object({
   payment_id: z.string().uuid(),
-  rejection_reason: z.string().optional(),
+  rejection_reason: z.string().min(1).max(300),
 });
 
 export class BookingController extends BaseController {
@@ -98,23 +99,22 @@ export class BookingController extends BaseController {
   }
 
   private async confirm(req: Request, res: Response): Promise<void> {
-    const { payment_id } = ReviewSchema.parse(req.body);
+    const { payment_id } = ConfirmSchema.parse(req.body);
     await this.bookingService.confirmBooking({
       tenantId: req.tenantId,
       bookingId: req.params['id'] as string,
-      paymentId: payment_id!,
+      paymentId: payment_id,
       reviewerUserId: req.tenantUser!.id,
     });
     this.noContent(res);
   }
 
   private async reject(req: Request, res: Response): Promise<void> {
-    const { payment_id, rejection_reason } = ReviewSchema.parse(req.body);
-    if (!rejection_reason) throw new Error('rejection_reason required');
+    const { payment_id, rejection_reason } = RejectSchema.parse(req.body);
     await this.bookingService.rejectBooking({
       tenantId: req.tenantId,
       bookingId: req.params['id'] as string,
-      paymentId: payment_id!,
+      paymentId: payment_id,
       reviewerUserId: req.tenantUser!.id,
       rejectionReason: rejection_reason,
     });

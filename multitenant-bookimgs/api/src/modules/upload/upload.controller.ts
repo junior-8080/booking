@@ -32,6 +32,12 @@ export class UploadController extends BaseController {
 
     const { category } = BodySchema.parse(req.body);
 
+    // logos and service images are admin-only; proofs are uploaded by public clients
+    if (category !== 'proofs' && !req.headers.authorization?.startsWith('Bearer ')) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
+
     const url = await uploadToR2(
       req.file.buffer,
       category as UploadCategory,

@@ -29,6 +29,9 @@ import { OnboardingService } from './modules/onboarding/onboarding.service';
 import { UploadController } from './modules/upload/upload.controller';
 import { TenantController } from './modules/tenant/tenant.controller';
 import { TenantService } from './modules/tenant/tenant.service';
+import { BillingController } from './modules/billing/billing.controller';
+import { BillingService } from './modules/billing/billing.service';
+import { createWebhookRouter } from './modules/billing/webhook.controller';
 
 export function createApp() {
   const app = express();
@@ -45,6 +48,10 @@ export function createApp() {
       return false;
     }
   };
+
+  // Paystack webhook — must be registered before express.json() so the raw
+  // body stream is available for HMAC signature verification.
+  app.use('/api/webhooks', createWebhookRouter());
 
   // Global middleware
   app.use(helmet());
@@ -132,6 +139,11 @@ export function createApp() {
 
   app.use('/api/tenant', (req, res, next) => {
     const ctrl = new TenantController(new TenantService());
+    ctrl.router(req, res, next);
+  });
+
+  app.use('/api/billing', (req, res, next) => {
+    const ctrl = new BillingController(new BillingService());
     ctrl.router(req, res, next);
   });
 

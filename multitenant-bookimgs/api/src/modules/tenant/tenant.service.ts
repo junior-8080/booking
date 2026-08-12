@@ -13,6 +13,21 @@ export interface TenantSettingsUpdate {
 // The tenant model is not tenant-scoped (it has no tenant_id column), so this
 // service uses the global client with an explicit id filter.
 export class TenantService {
+  async getPublicStatus(tenantId: string): Promise<{ is_accepting_bookings: boolean }> {
+    const tenant = await globalPrisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundError('Tenant');
+
+    const now = new Date();
+
+    if (tenant.subscription_status === 'TRIALING') {
+      return { is_accepting_bookings: !tenant.trial_ends_at || tenant.trial_ends_at > now };
+    }
+    if (tenant.subscription_status === 'ACTIVE') {
+      return { is_accepting_bookings: !tenant.subscription_expires_at || tenant.subscription_expires_at > now };
+    }
+    return { is_accepting_bookings: false };
+  }
+
   async getSettings(tenantId: string) {
     const tenant = await globalPrisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundError('Tenant');

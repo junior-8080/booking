@@ -61,6 +61,13 @@ enum PaymentSourceType {
   OTHER
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
 enum BookingStatus {
   PENDING
   BOOKED
@@ -98,8 +105,13 @@ model Tenant {
   country_code                String
   timezone                    String
   default_currency            String
-  status                      TenantStatus @default(PENDING)
-  booking_confirmation_sla_hours Int       @default(48)
+  status                      TenantStatus       @default(PENDING)
+  subscription_status         SubscriptionStatus @default(ACTIVE)
+  trial_ends_at               DateTime?          @db.Timestamptz
+  subscription_expires_at     DateTime?          @db.Timestamptz
+  paystack_customer_code      String?
+  paystack_subscription_code  String?
+  booking_confirmation_sla_hours Int             @default(48)
   slot_hold_minutes           Int          @default(20)
   settings                    Json?        @default("{}")
   created_at                  DateTime     @default(now()) @db.Timestamptz

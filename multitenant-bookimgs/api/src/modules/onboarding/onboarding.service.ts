@@ -54,6 +54,9 @@ export class OnboardingService {
 
     const password_hash = await bcrypt.hash(password, 12);
 
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
     const { tenant, user } = await globalPrisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
@@ -61,6 +64,8 @@ export class OnboardingService {
           subdomain,
           ...countrySettings,
           status: 'ACTIVE',
+          subscription_status: 'TRIALING',
+          trial_ends_at: trialEndsAt,
           settings: { owner_phone: owner_phone },
         },
       });
