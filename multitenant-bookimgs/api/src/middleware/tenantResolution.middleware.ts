@@ -20,7 +20,7 @@ export async function tenantResolutionMiddleware(
   if (host.endsWith(`.${baseDomain}`)) {
     // Subdomain of the app domain: glow-spa.bookimgs.app
     subdomain = host.slice(0, -(baseDomain.length + 1));
-  } else if (host === baseDomain || host === `www.${baseDomain}` || isIpHost) {
+  } else if (host === baseDomain || host === `www.${baseDomain}` || host === `api.${baseDomain}` || isIpHost) {
     // Root domain, bare localhost, or a LAN IP (phone testing) — header override
     subdomain = req.headers['x-tenant-subdomain'] as string | undefined;
   } else if (host.includes('.')) {

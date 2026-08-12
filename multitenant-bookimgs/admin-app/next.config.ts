@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   // LAN devices (e.g. phone testing) hitting the dev server
   allowedDevOrigins: ['192.168.0.108', '*.local'],
   async rewrites() {
