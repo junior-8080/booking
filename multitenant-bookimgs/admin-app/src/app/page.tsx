@@ -63,31 +63,33 @@ export default function LandingPage() {
     <div style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: '#fff', color: '#1c1917', WebkitFontSmoothing: 'antialiased' }}>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: '1px solid #f0ece8', padding: '0 40px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav className="lp-nav" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: '1px solid #f0ece8', padding: '0 40px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: BRAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fdf4fb', fontWeight: 700, fontSize: 13 }}>Bk</span>
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>BookImgs</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          <a href="#features" style={{ fontSize: 14, color: '#6b6560' }}>Features</a>
-          <a href="#how-it-works" style={{ fontSize: 14, color: '#6b6560' }}>How it works</a>
-          <Link href="/login" style={{ fontSize: 14, color: '#6b6560' }}>Sign in</Link>
-          <Link href="/onboarding" style={{ padding: '8px 16px', borderRadius: 7, background: BRAND, color: '#fff', fontSize: 14, fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="lp-nav-links">
+            <a href="#features" style={{ fontSize: 14, color: '#6b6560' }}>Features</a>
+            <a href="#how-it-works" style={{ fontSize: 14, color: '#6b6560' }}>How it works</a>
+            <Link href="/login" style={{ fontSize: 14, color: '#6b6560' }}>Sign in</Link>
+          </div>
+          <Link href="/onboarding" style={{ padding: '8px 16px', borderRadius: 7, background: BRAND, color: '#fff', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
             Get started free
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section style={{ padding: '96px 40px 80px', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
+      <section className="lp-hero lp-pad" style={{ padding: '96px 40px 80px', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 20, background: '#fdf4fb', border: '1px solid #f0d5ec', marginBottom: 28 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: BRAND, display: 'inline-block' }} />
           <span style={{ fontSize: 13, color: BRAND_DARK, fontWeight: 500 }}>No payment gateway required</span>
         </div>
-        <h1 style={{ fontSize: 'clamp(36px, 6vw, 58px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-1.5px', margin: '0 0 22px', color: '#1c1917' }}>
-          Bookings that work the<br />
+        <h1 style={{ fontSize: 'clamp(32px, 6vw, 58px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-1.5px', margin: '0 0 22px', color: '#1c1917' }}>
+          Bookings that work the{' '}
           <span style={{ color: BRAND }}>way your business does</span>
         </h1>
         <p style={{ fontSize: 18, color: '#6b6560', lineHeight: 1.65, maxWidth: 560, margin: '0 auto 40px' }}>
@@ -105,23 +107,23 @@ export default function LandingPage() {
       </section>
 
       {/* Social proof */}
-      <div style={{ background: '#f8f7f5', borderTop: '1px solid #ede9e5', borderBottom: '1px solid #ede9e5', padding: '18px 40px', textAlign: 'center' }}>
+      <div className="lp-pad" style={{ background: '#f8f7f5', borderTop: '1px solid #ede9e5', borderBottom: '1px solid #ede9e5', padding: '18px 40px', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: '#a39d97', maxWidth: 640, margin: '0 auto' }}>
           Built for salons, barbershops, spas, consultants, photographers, and every service business that just needs bookings to work.
         </p>
       </div>
 
       {/* Features */}
-      <section id="features" style={{ padding: '96px 40px', maxWidth: 1100, margin: '0 auto' }}>
+      <section id="features" className="lp-pad lp-vert-lg" style={{ padding: '96px 40px', maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: '#1c1917' }}>
+          <h2 style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: '#1c1917' }}>
             Everything you need. Nothing you don&apos;t.
           </h2>
           <p style={{ fontSize: 16, color: '#6b6560', maxWidth: 440, margin: '0 auto' }}>
             Purpose-built for service businesses. No bloat, no onboarding calls, no waiting.
           </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
           {FEATURES.map(f => (
             <div key={f.title} style={{ padding: '24px 24px 20px', borderRadius: 14, border: '1px solid #e4dfd9', background: '#fff' }}>
               <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fdf4fb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: BRAND }}>
@@ -135,10 +137,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" style={{ padding: '80px 40px', background: '#f8f7f5', borderTop: '1px solid #ede9e5' }}>
+      <section id="how-it-works" className="lp-pad lp-vert-md" style={{ padding: '80px 40px', background: '#f8f7f5', borderTop: '1px solid #ede9e5' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: '#1c1917' }}>From sign-up to first booking in minutes</h2>
+            <h2 style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: '#1c1917' }}>From sign-up to first booking in minutes</h2>
             <p style={{ fontSize: 16, color: '#6b6560' }}>No dev setup, no gateway onboarding, no waiting.</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -161,8 +163,8 @@ export default function LandingPage() {
       </section>
 
       {/* Payment methods */}
-      <section style={{ padding: '80px 40px', maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 800, letterSpacing: '-0.8px', marginBottom: 10, color: '#1c1917' }}>Accept payment your way</h2>
+      <section className="lp-pad lp-vert-md" style={{ padding: '80px 40px', maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 800, letterSpacing: '-0.8px', marginBottom: 10, color: '#1c1917' }}>Accept payment your way</h2>
         <p style={{ fontSize: 15, color: '#6b6560', marginBottom: 36 }}>Clients pay you directly. Zero platform fees. Zero delays.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {PAYMENT_METHODS.map(m => (
@@ -172,8 +174,8 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '80px 40px', background: BRAND, textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#fff', marginBottom: 14, letterSpacing: '-1px' }}>Ready to fill your calendar?</h2>
+      <section className="lp-pad lp-vert-md" style={{ padding: '80px 40px', background: BRAND, textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, color: '#fff', marginBottom: 14, letterSpacing: '-1px' }}>Ready to fill your calendar?</h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', marginBottom: 36 }}>Set up your booking page in under 10 minutes.</p>
         <Link href="/onboarding" style={{ display: 'inline-block', padding: '14px 30px', borderRadius: 9, background: '#fff', color: BRAND, fontSize: 16, fontWeight: 700 }}>
           Get started — it&apos;s free
@@ -181,7 +183,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '28px 40px', borderTop: '1px solid #ede9e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <footer className="lp-footer" style={{ padding: '28px 40px', borderTop: '1px solid #ede9e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: BRAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fdf4fb', fontWeight: 700, fontSize: 11 }}>Bk</span>

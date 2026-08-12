@@ -39,7 +39,7 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg)' }}>
       {/* Left panel */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 32px' }}>
+      <div className="login-left" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 32px' }}>
         <div style={{ width: '100%', maxWidth: 380 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
@@ -101,7 +101,6 @@ export default function LoginPage() {
 
       {/* Right panel */}
       <div style={{ width: 420, background: 'var(--brand)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 48 }} className="login-panel">
-        <style>{`@media (max-width: 768px) { .login-panel { display: none; } }`}</style>
         <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 24 }}>Built for service businesses</div>
         <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: 32 }}>
           Bookings, deposits, and confirmations — all in one place.

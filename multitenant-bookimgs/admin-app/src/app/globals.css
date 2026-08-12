@@ -140,4 +140,22 @@ input, textarea, select { font-family: inherit; }
   .service-item-actions { width: 100% !important; justify-content: flex-end !important; margin-top: 8px; }
   .exceptions-card { display: none !important; }
   .availability-grid { grid-template-columns: 1fr !important; }
+  /* Auth */
+  .login-panel { display: none !important; }
+  .login-left { padding: 36px 24px !important; }
+}
+
+/* ── Landing page ─────────────────────────────────────────── */
+.lp-nav-links { display: flex; align-items: center; gap: 24px; }
+
+@media (max-width: 640px) {
+  .lp-nav-links { display: none !important; }
+  .lp-nav { padding-left: 20px !important; padding-right: 20px !important; }
+  .lp-hero { padding: 52px 20px 40px !important; text-align: center; }
+  .lp-pad { padding-left: 20px !important; padding-right: 20px !important; }
+  .lp-vert-lg { padding-top: 56px !important; padding-bottom: 56px !important; }
+  .lp-vert-md { padding-top: 44px !important; padding-bottom: 44px !important; }
+  .lp-footer { padding: 24px 20px !important; flex-direction: column !important; align-items: center !important; text-align: center; gap: 12px !important; }
+  .lp-hero h1 { letter-spacing: -0.5px !important; }
+  .lp-hero p { font-size: 16px !important; }
 }
