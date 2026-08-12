@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
 import { adminApi } from '@/lib/api';
@@ -27,6 +27,14 @@ const STATUS_META: Record<BillingStatus['subscription_status'], { label: string;
 };
 
 export default function BillingPage() {
+  return (
+    <Suspense>
+      <BillingPageInner />
+    </Suspense>
+  );
+}
+
+function BillingPageInner() {
   const searchParams = useSearchParams();
   const justSubscribed = searchParams.get('status') === 'success';
   const paystackReference = searchParams.get('reference') ?? searchParams.get('trxref');
