@@ -123,7 +123,7 @@ function BrandBadge({ brand, large }: { brand: Brand | undefined; large?: boolea
 
 function StepBar({ currentIdx, maxIdx, onJumpTo }: { currentIdx: number; maxIdx: number; onJumpTo: (i: number) => void }) {
   return (
-    <div style={{ flex: 1, display: 'flex', gap: 5, overflowX: 'auto', padding: '2px 0' }}>
+    <div style={{ flex: 1, display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 0' }}>
       {STEP_LABELS.map((label, i) => {
         const reachable = i <= maxIdx;
         const active = i === currentIdx;
@@ -135,21 +135,31 @@ function StepBar({ currentIdx, maxIdx, onJumpTo }: { currentIdx: number; maxIdx:
             disabled={!reachable}
             style={{
               flexShrink: 0,
-              minWidth: 64,
+              minWidth: 76,
               border: 'none',
               cursor: reachable ? 'pointer' : 'default',
-              padding: '8px 14px',
-              borderRadius: 10,
-              transition: 'background 0.2s, color 0.2s',
-              background: active ? A : done ? `${A}15` : 'rgba(0,0,0,0.05)',
-              color: active ? '#fff' : done ? A_DARK : 'rgba(0,0,0,0.38)',
-              fontSize: 11,
+              padding: '10px 14px',
+              borderRadius: 13,
+              transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+              background: active ? A : done ? `${A}12` : 'rgba(255,255,255,0.55)',
+              color: active ? '#fff' : done ? A_DARK : 'rgba(0,0,0,0.35)',
+              boxShadow: active ? `0 4px 16px ${A}40` : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              whiteSpace: 'nowrap' as const,
+              fontSize: 12,
               fontWeight: 700,
               textTransform: 'uppercase' as const,
-              letterSpacing: 0.4,
-              whiteSpace: 'nowrap' as const,
+              letterSpacing: 0.5,
             }}
           >
+            {done && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l5 5 9-10" stroke={A_DARK} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
             {label}
           </button>
         );
@@ -413,19 +423,15 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                   <BrandBadge brand={primaryBrand} />
                 </div>
               )}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                {canGoBack ? (
-                  <button
-                    className="tap"
-                    onClick={() => goTo(ORDER[Math.max(0, stepIdx - 1)] as Step)}
-                    style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'transform 0.1s', ...glass }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="oklch(30% 0.02 50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </button>
-                ) : <div style={{ width: 34 }} />}
-                <StepBar currentIdx={stepIdx} maxIdx={maxReached} onJumpTo={jumpTo} />
-                <div style={{ width: 34 }} />
-              </div>
+              {canGoBack && (
+                <button
+                  className="tap"
+                  onClick={() => goTo(ORDER[Math.max(0, stepIdx - 1)] as Step)}
+                  style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'transform 0.1s', ...glass }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="oklch(30% 0.02 50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              )}
             </div>
           )}
 

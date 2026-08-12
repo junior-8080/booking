@@ -285,13 +285,14 @@ export default function SettingsPage() {
             <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>
               How long clients have to pay, and how long you have to confirm.
             </p>
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div className="settings-rules-row">
               <div style={{ flex: 1 }}>
                 <label style={lbl}>Slot hold time</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="number" min={5} max={240}
                     value={settingsForm.slot_hold_minutes}
+                    onFocus={e => e.target.select()}
                     onChange={e => setSettingsForm(p => ({ ...p, slot_hold_minutes: +e.target.value }))}
                     style={{ ...inp, paddingRight: 44 }}
                   />
@@ -305,6 +306,7 @@ export default function SettingsPage() {
                   <input
                     type="number" min={1} max={168}
                     value={settingsForm.booking_confirmation_sla_hours}
+                    onFocus={e => e.target.select()}
                     onChange={e => setSettingsForm(p => ({ ...p, booking_confirmation_sla_hours: +e.target.value }))}
                     style={{ ...inp, paddingRight: 44 }}
                   />

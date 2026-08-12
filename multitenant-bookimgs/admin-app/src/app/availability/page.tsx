@@ -99,6 +99,7 @@ function RangeForm({
             <input
               type="number" min={1}
               value={form.capacity}
+              onFocus={e => e.target.select()}
               onChange={e => set('capacity', +e.target.value)}
               style={{ ...inp, width: 72, paddingRight: 36 }}
             />
@@ -111,6 +112,7 @@ function RangeForm({
             <input
               type="number" min={5} step={5}
               value={form.slot_duration_minutes}
+              onFocus={e => e.target.select()}
               onChange={e => set('slot_duration_minutes', +e.target.value)}
               style={{ ...inp, width: 72, paddingRight: 32 }}
             />
@@ -467,7 +469,7 @@ export default function AvailabilityPage() {
       ) : loading ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 14 }}>Loading…</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+        <div className="availability-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
 
           {/* Weekly hours */}
           <div>
@@ -496,7 +498,7 @@ export default function AvailabilityPage() {
           </div>
 
           {/* Exceptions */}
-          <div>
+          <div className="exceptions-card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>Exceptions</div>

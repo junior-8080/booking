@@ -35,7 +35,7 @@ const NAV = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const [subdomain, setSubdomain] = useState('');
 
@@ -56,6 +56,19 @@ export function Sidebar() {
       {/* Brand */}
       <div style={{ padding: '22px 20px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Mobile close button */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="sidebar-close-btn"
+              aria-label="Close menu"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4, alignItems: 'center', marginLeft: 'auto', order: 1 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <span style={{ color: '#fdf4fb', fontWeight: 700, fontSize: 14, letterSpacing: '-0.5px' }}>Bk</span>
           </div>

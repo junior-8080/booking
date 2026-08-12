@@ -6,11 +6,46 @@ import { adminApi } from '@/lib/api';
 import type { Booking, BookingStatus } from '@/types';
 import { formatAmount } from '@/types';
 
-const TABS: { label: string; value: BookingStatus | '' }[] = [
-  { label: 'All', value: '' },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Booked', value: 'BOOKED' },
-  { label: 'Rejected', value: 'REJECTED' },
+const TABS: {
+  label: string;
+  value: BookingStatus | '';
+  dot: string;
+  activeBg: string;
+  activeColor: string;
+  activeBorder: string;
+}[] = [
+  {
+    label: 'All',
+    value: '',
+    dot: 'var(--border-2)',
+    activeBg: 'var(--bg)',
+    activeColor: 'var(--text-1)',
+    activeBorder: 'var(--border-2)',
+  },
+  {
+    label: 'Pending',
+    value: 'PENDING',
+    dot: 'var(--warning-fg)',
+    activeBg: 'var(--warning-bg)',
+    activeColor: 'var(--warning-fg)',
+    activeBorder: 'var(--warning-fg)',
+  },
+  {
+    label: 'Booked',
+    value: 'BOOKED',
+    dot: 'var(--success-fg)',
+    activeBg: 'var(--success-bg)',
+    activeColor: 'var(--success-fg)',
+    activeBorder: 'var(--success-fg)',
+  },
+  {
+    label: 'Rejected',
+    value: 'REJECTED',
+    dot: 'var(--danger-fg)',
+    activeBg: 'var(--danger-bg)',
+    activeColor: 'var(--danger-fg)',
+    activeBorder: 'var(--danger-fg)',
+  },
 ];
 
 const STATUS_STYLE: Record<BookingStatus, { bg: string; color: string; label: string }> = {
@@ -113,7 +148,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
           )}
 
           {booking.status === 'PENDING' && latestPayment && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+            <div className="booking-actions">
               <input
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}
@@ -164,23 +199,46 @@ export default function BookingsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 20, background: 'var(--bg-subtle)', padding: 4, borderRadius: 10, width: 'fit-content', flexWrap: 'wrap' }}>
-        {TABS.map(t => (
-          <button
-            key={t.value}
-            onClick={() => setTab(t.value)}
-            style={{
-              padding: '6px 14px', borderRadius: 7, border: 'none', fontSize: 13, cursor: 'pointer',
-              background: tab === t.value ? 'var(--surface)' : 'transparent',
-              color: tab === t.value ? 'var(--text-1)' : 'var(--text-2)',
-              fontWeight: tab === t.value ? 600 : 400,
-              boxShadow: tab === t.value ? 'var(--shadow-sm)' : 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div
+        className="booking-tabs"
+        style={{ marginBottom: 24 }}
+      >
+        {TABS.map(t => {
+          const active = tab === t.value;
+          return (
+            <button
+              key={t.value}
+              onClick={() => setTab(t.value)}
+              style={{
+                padding: '18px 16px',
+                borderRadius: 12,
+                border: `2px solid ${active ? t.activeBorder : 'var(--border)'}`,
+                fontSize: 15,
+                fontWeight: active ? 700 : 500,
+                cursor: 'pointer',
+                background: active ? t.activeBg : 'var(--surface)',
+                color: active ? t.activeColor : 'var(--text-2)',
+                transition: 'all 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 9,
+                boxShadow: active ? 'var(--shadow)' : 'var(--shadow-sm)',
+                letterSpacing: '-0.2px',
+              }}
+            >
+              <span style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: active ? t.dot : 'var(--border-2)',
+                flexShrink: 0,
+                transition: 'background 0.15s',
+              }} />
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -136,7 +136,7 @@ export default function ServicesPage() {
   return (
     <DashboardShell>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+      <div className="page-header-row" style={{ marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4, color: 'var(--text-1)' }}>Services</h1>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Manage your bookable services and pricing.</p>
@@ -230,7 +230,7 @@ export default function ServicesPage() {
             <Divider />
 
             {/* Duration & Price */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid-2">
               <div>
                 <Label>Duration</Label>
                 <div style={{ position: 'relative' }}>
@@ -238,6 +238,7 @@ export default function ServicesPage() {
                     type="number"
                     min={1}
                     value={form.duration_minutes}
+                    onFocus={e => e.target.select()}
                     onChange={e => s('duration_minutes', +e.target.value)}
                     required
                     style={{ ...inp, paddingRight: 48 }}
@@ -253,6 +254,7 @@ export default function ServicesPage() {
                     min={0}
                     step={0.01}
                     value={form.price_amount}
+                    onFocus={e => e.target.select()}
                     onChange={e => s('price_amount', +e.target.value)}
                     required
                     style={{ ...inp, flex: 1 }}
@@ -307,6 +309,7 @@ export default function ServicesPage() {
                     min={form.deposit_type === 'PERCENTAGE' ? 1 : 0}
                     max={form.deposit_type === 'PERCENTAGE' ? 100 : undefined}
                     value={form.deposit_value}
+                    onFocus={e => e.target.select()}
                     onChange={e => s('deposit_value', +e.target.value)}
                     required
                     style={{ ...inp, paddingRight: 44 }}
@@ -401,6 +404,7 @@ export default function ServicesPage() {
               boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
               borderLeft: `3px solid ${svc.is_active ? 'var(--brand)' : 'var(--border)'}`,
             }}
+            className="service-item"
           >
             {svc.image_url && (
               <div style={{ width: 56, height: 56, borderRadius: 10, flexShrink: 0, background: `url(${svc.image_url}) center/cover no-repeat`, border: '1px solid var(--border)' }} />
@@ -423,7 +427,7 @@ export default function ServicesPage() {
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc.description}</div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+            <div className="service-item-actions">
               <button
                 onClick={() => openEdit(svc)}
                 style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}

@@ -55,7 +55,7 @@ export default function CustomersPage() {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 1.2fr' : '1fr', gap: 16 }}>
+      <div className={`customers-grid${selected ? ' has-selected' : ''}`}>
         {/* Customer list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {customers.length === 0 && (
