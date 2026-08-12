@@ -17,12 +17,12 @@ export async function tenantResolutionMiddleware(
 
   const isIpHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 
-  if (host.endsWith(`.${baseDomain}`)) {
-    // Subdomain of the app domain: glow-spa.bookimgs.app
-    subdomain = host.slice(0, -(baseDomain.length + 1));
-  } else if (host === baseDomain || host === `www.${baseDomain}` || host === `api.${baseDomain}` || isIpHost) {
-    // Root domain, bare localhost, or a LAN IP (phone testing) — header override
+  if (host === baseDomain || host === `www.${baseDomain}` || host === `api.${baseDomain}` || isIpHost) {
+    // Root domain, API host, bare IP (phone testing) — use header override
     subdomain = req.headers['x-tenant-subdomain'] as string | undefined;
+  } else if (host.endsWith(`.${baseDomain}`)) {
+    // Tenant subdomain: glow-spa.bookaata.app
+    subdomain = host.slice(0, -(baseDomain.length + 1));
   } else if (host.includes('.')) {
     subdomain = host.split('.')[0];
   } else {
