@@ -7,7 +7,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('30d'),
 
   // Email
   EMAIL_PROVIDER: z.enum(['brevo', 'resend', 'sendgrid']).default('brevo'),

@@ -68,6 +68,11 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum PlanInterval {
+  MONTHLY
+  YEARLY
+}
+
 enum BookingStatus {
   PENDING
   BOOKED
@@ -118,6 +123,7 @@ model Tenant {
   updated_at                  DateTime     @updatedAt @db.Timestamptz
 
   brands               Brand[]
+  subscriptions        Subscription[]
   tenant_users         TenantUser[]
   customers            Customer[]
   services             Service[]
@@ -132,12 +138,13 @@ model Tenant {
 }
 
 model Brand {
-  id          String  @id @default(uuid()) @db.Uuid
-  tenant_id   String  @db.Uuid
-  name        String
-  logo_url    String?
-  description String?
-  is_primary  Boolean @default(true)
+  id                String  @id @default(uuid()) @db.Uuid
+  tenant_id         String  @db.Uuid
+  name              String
+  logo_url          String?
+  description       String?
+  terms_conditions  String?
+  is_primary        Boolean @default(true)
   created_at  DateTime @default(now()) @db.Timestamptz
   updated_at  DateTime @updatedAt @db.Timestamptz
 
@@ -145,6 +152,43 @@ model Brand {
   services Service[]
 
   @@map("brands")
+}
+
+model SubscriptionPlan {
+  id           String      @id @default(uuid()) @db.Uuid
+  name         String
+  interval     PlanInterval
+  amount       Int
+  currency     String
+  description  String?
+  is_active    Boolean     @default(true)
+  created_at   DateTime    @default(now()) @db.Timestamptz
+  updated_at   DateTime    @updatedAt @db.Timestamptz
+
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id          String             @id @default(uuid()) @db.Uuid
+  tenant_id   String             @db.Uuid
+  plan_id     String?            @db.Uuid
+  plan        PlanInterval
+  status      SubscriptionStatus @default(ACTIVE)
+  starts_at   DateTime           @db.Timestamptz
+  expires_at  DateTime           @db.Timestamptz
+  amount      Int
+  currency    String
+  reference   String?
+  notes       String?
+  created_at  DateTime           @default(now()) @db.Timestamptz
+  updated_at  DateTime           @updatedAt @db.Timestamptz
+
+  tenant            Tenant            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  subscription_plan SubscriptionPlan? @relation(fields: [plan_id], references: [id])
+
+  @@map("subscriptions")
 }
 
 model TenantUser {

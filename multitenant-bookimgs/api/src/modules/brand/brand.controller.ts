@@ -8,6 +8,7 @@ const BrandSchema = z.object({
   name: z.string().min(1),
   logo_url: z.string().url().nullable().optional(),
   description: z.string().optional(),
+  terms_conditions: z.string().optional(),
   is_primary: z.boolean().optional(),
 });
 

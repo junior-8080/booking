@@ -4,7 +4,10 @@ import { BaseController } from '../../core/BaseController';
 import { BillingService } from './billing.service';
 import { requireAuth } from '../../middleware/auth.middleware';
 
-const PaySchema = z.object({ email: z.string().email() });
+const PaySchema = z.object({
+  email: z.string().email(),
+  plan:  z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+});
 const VerifySchema = z.object({ reference: z.string().min(1) });
 
 export class BillingController extends BaseController {
@@ -24,8 +27,8 @@ export class BillingController extends BaseController {
   }
 
   private async pay(req: Request, res: Response): Promise<void> {
-    const { email } = PaySchema.parse(req.body);
-    const data = await this.billingService.initializePayment(req.tenantId, email);
+    const { email, plan } = PaySchema.parse(req.body);
+    const data = await this.billingService.initializePayment(req.tenantId, email, plan);
     this.ok(res, data);
   }
 

@@ -28,6 +28,12 @@ export const COUNTRIES: Record<string, CountryConfig> = {
     timezones: ['Africa/Accra'],
     defaultTimezone: 'Africa/Accra',
   },
+  GB: {
+    name: 'United Kingdom',
+    currency: 'GBP',
+    timezones: ['Europe/London'],
+    defaultTimezone: 'Europe/London',
+  },
 };
 
 export const COUNTRY_CODES = Object.keys(COUNTRIES) as [string, ...string[]];

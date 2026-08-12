@@ -32,6 +32,10 @@ import { TenantService } from './modules/tenant/tenant.service';
 import { BillingController } from './modules/billing/billing.controller';
 import { BillingService } from './modules/billing/billing.service';
 import { createWebhookRouter } from './modules/billing/webhook.controller';
+import { SubscriptionController } from './modules/subscription/subscription.controller';
+import { SubscriptionService } from './modules/subscription/subscription.service';
+import { SubscriptionPlanController } from './modules/subscription/subscriptionPlan.controller';
+import { SubscriptionPlanService } from './modules/subscription/subscriptionPlan.service';
 
 export function createApp() {
   const app = express();
@@ -75,6 +79,18 @@ export function createApp() {
   // Upload presign — no tenant required; open to both public and admin callers
   app.use('/api/upload', (req, res, next) => {
     const ctrl = new UploadController();
+    ctrl.router(req, res, next);
+  });
+
+  // Subscriptions — public, no tenant header required (internal use)
+  app.use('/api/subscriptions', (req, res, next) => {
+    const ctrl = new SubscriptionController(new SubscriptionService());
+    ctrl.router(req, res, next);
+  });
+
+  // Subscription plans catalog — public
+  app.use('/api/subscription-plans', (req, res, next) => {
+    const ctrl = new SubscriptionPlanController(new SubscriptionPlanService());
     ctrl.router(req, res, next);
   });
 
