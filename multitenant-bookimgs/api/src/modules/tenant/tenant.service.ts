@@ -13,19 +13,24 @@ export interface TenantSettingsUpdate {
 // The tenant model is not tenant-scoped (it has no tenant_id column), so this
 // service uses the global client with an explicit id filter.
 export class TenantService {
-  async getPublicStatus(tenantId: string): Promise<{ is_accepting_bookings: boolean }> {
+  async getPublicStatus(tenantId: string): Promise<{ is_accepting_bookings: boolean; timezone: string }> {
     const tenant = await globalPrisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundError('Tenant');
 
     const now = new Date();
 
+    // The public booking page needs the tenant's own timezone to display slot
+    // times as configured, rather than silently converting to the visiting
+    // customer's device timezone — a customer booking an in-person appointment
+    // needs to know what time to show up in the *business's* local time, not
+    // a number auto-translated to wherever their phone thinks it is.
     if (tenant.subscription_status === 'TRIALING') {
-      return { is_accepting_bookings: !tenant.trial_ends_at || tenant.trial_ends_at > now };
+      return { is_accepting_bookings: !tenant.trial_ends_at || tenant.trial_ends_at > now, timezone: tenant.timezone };
     }
     if (tenant.subscription_status === 'ACTIVE') {
-      return { is_accepting_bookings: !tenant.subscription_expires_at || tenant.subscription_expires_at > now };
+      return { is_accepting_bookings: !tenant.subscription_expires_at || tenant.subscription_expires_at > now, timezone: tenant.timezone };
     }
-    return { is_accepting_bookings: false };
+    return { is_accepting_bookings: false, timezone: tenant.timezone };
   }
 
   async getSettings(tenantId: string) {

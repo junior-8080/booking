@@ -21,7 +21,7 @@ import type { Brand, Service, Slot, PaymentSource, Booking, Customer, Payment } 
 
 export const bookingApi = {
   getTenantStatus: (subdomain: string) =>
-    request<{ is_accepting_bookings: boolean }>('/tenant/public-status', subdomain),
+    request<{ is_accepting_bookings: boolean; timezone: string }>('/tenant/public-status', subdomain),
 
   getBrands: (subdomain: string) =>
     request<Brand[]>('/brands', subdomain),

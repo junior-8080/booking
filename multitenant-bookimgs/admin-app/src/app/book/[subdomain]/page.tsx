@@ -39,6 +39,34 @@ function nextDates(n = 14) {
   });
 }
 
+// Slot times are intentionally always shown in the *tenant's* timezone, never
+// silently converted to the visiting customer's device timezone — this is an
+// in-person business, so the customer needs to know what time to show up in
+// the business's own local time, regardless of what timezone their phone
+// happens to think it's in.
+const VIEWER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function tzOffsetMinutes(timeZone: string, at: Date = new Date()): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(at);
+  const get = (t: string) => Number(parts.find(p => p.type === t)?.value ?? '0');
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+  return (asUtc - at.getTime()) / 60_000;
+}
+
+function tzCity(timeZone: string): string {
+  return timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone;
+}
+
+function tzOffsetLabel(timeZone: string): string {
+  const offset = new Intl.DateTimeFormat('en', { timeZone, timeZoneName: 'shortOffset' })
+    .formatToParts(new Date())
+    .find(p => p.type === 'timeZoneName')?.value;
+  return offset ?? '';
+}
+
 // ── Loader ────────────────────────────────────────────────────────────────────
 function BookingPageLoader() {
   return (
@@ -198,6 +226,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const [error, setError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [bookingsBlocked, setBookingsBlocked] = useState(false);
+  const [tenantTimezone, setTenantTimezone] = useState('');
   const [showTc, setShowTc] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
 
@@ -220,6 +249,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
     ])
       .then(([status, b, s, ps, resumed]) => {
         setBrands(b);
+        setTenantTimezone(status.timezone);
         if (!status.is_accepting_bookings) { setBookingsBlocked(true); return; }
         setServices(s); setPaymentSources(ps); setSelectedSourceId(ps[0]?.id ?? null);
         if (!resumed && urlServiceId) {
@@ -363,6 +393,12 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const whatsappLink = whatsappDigits
     ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`Hi${primaryBrand?.name ? ' ' + primaryBrand.name : ''}, I have a question about booking an appointment.`)}`
     : '';
+  const showTzNote = !!tenantTimezone && tenantTimezone !== VIEWER_TIMEZONE;
+  const tzHourDiff = showTzNote ? Math.round((tzOffsetMinutes(tenantTimezone) - tzOffsetMinutes(VIEWER_TIMEZONE)) / 60) : 0;
+  const tzDiffLabel = tzHourDiff === 0
+    ? 'currently the same time as you'
+    : `${Math.abs(tzHourDiff)} hour${Math.abs(tzHourDiff) === 1 ? '' : 's'} ${tzHourDiff > 0 ? 'ahead of' : 'behind'} you`;
+
   const serviceName = selectedService?.name ?? booking?.service?.name;
   const depositLabel = booking
     ? formatAmount(booking.required_amount, booking.required_currency)
@@ -561,6 +597,15 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                     <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, margin: 0 }}>Pick a time</h2>
                   </div>
 
+                  {tenantTimezone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '9px 12px', borderRadius: 12, ...glass }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={A} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                      <span style={{ fontSize: 12, color: 'oklch(38% 0.02 50)', lineHeight: 1.4 }}>
+                        Times shown are <strong>{tzCity(tenantTimezone)} time</strong> ({tzOffsetLabel(tenantTimezone)}){showTzNote ? ` — ${tzDiffLabel}` : ''}
+                      </span>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '14px 0 4px', margin: '0 -4px' }}>
                     {dates.map(d => {
                       const sel = d.key === selectedDate;
@@ -585,7 +630,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                       </p>
                     )}
                     {slots.map((slot, i) => {
-                      const time = new Date(slot.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                      const time = new Date(slot.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined });
                       const sel = selectedSlot?.start === slot.start;
                       return (
                         <button
@@ -617,7 +662,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                 <div>
                   <div style={{ padding: '2px 0 4px' }}>
                     <div style={{ fontSize: 13, color: MUTED, marginBottom: 2 }}>
-                      {selectedService?.name} · {selectedSlot ? new Date(selectedSlot.start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
+                      {selectedService?.name} · {selectedSlot ? new Date(selectedSlot.start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined }) : ''}
                     </div>
                     <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, margin: 0 }}>Your details</h2>
                   </div>
@@ -793,7 +838,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                   <div style={{ width: '100%', padding: 16, borderRadius: 16, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, ...glass }}>
                     {[
                       { label: 'Service', value: booking.service?.name },
-                      { label: 'Time', value: booking.slot_start ? new Date(booking.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '' },
+                      { label: 'Time', value: booking.slot_start ? new Date(booking.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined }) : '' },
                       { label: 'Deposit', value: formatAmount(booking.required_amount, booking.required_currency) },
                       { label: 'Reference', value: booking.reference_code },
                     ].map(row => (

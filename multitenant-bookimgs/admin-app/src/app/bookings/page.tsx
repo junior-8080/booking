@@ -64,6 +64,16 @@ function StatusBadge({ status }: { status: BookingStatus }) {
   );
 }
 
+function tzLabel(tz: string): string {
+  const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? tz;
+  try {
+    const offset = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' })
+      .formatToParts(new Date())
+      .find(p => p.type === 'timeZoneName')?.value;
+    return offset ? `${city} (${offset})` : city;
+  } catch { return city; }
+}
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -73,7 +83,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => void }) {
+function BookingRow({ booking, onAction, tenantTimezone }: { booking: Booking; onAction: () => void; tenantTimezone: string }) {
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -120,7 +130,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
           <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
             {booking.service?.name}
             <span style={{ margin: '0 6px', color: 'var(--border-2)' }}>·</span>
-            {new Date(booking.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            {new Date(booking.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined })}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -137,7 +147,7 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16, marginBottom: 16 }}>
             <Field label="Phone" value={booking.customer.phone} />
             <Field label="Email" value={booking.customer.email ?? '—'} />
-            <Field label="Time slot" value={`${new Date(booking.slot_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – ${new Date(booking.slot_end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`} />
+            <Field label="Time slot" value={`${new Date(booking.slot_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined })} – ${new Date(booking.slot_end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined })}`} />
             <Field label="Client notes" value={booking.client_notes ?? '—'} />
             {booking.rejection_reason && <Field label="Rejection reason" value={booking.rejection_reason} />}
           </div>
@@ -224,6 +234,7 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [subdomain, setSubdomain] = useState('');
   const [copied, setCopied] = useState(false);
+  const [tenantTimezone, setTenantTimezone] = useState('');
   const toast = useToast();
 
   const load = async () => {
@@ -235,6 +246,11 @@ export default function BookingsPage() {
 
   useEffect(() => { load(); }, [tab]);
   useEffect(() => { setSubdomain(localStorage.getItem('subdomain') ?? ''); }, []);
+  // Booking times are always shown in the tenant's own configured business
+  // timezone, not the viewer's device timezone — otherwise a tenant reviewing
+  // her own bookings from a device set to a different zone would see her own
+  // 9am appointment appear at some other hour.
+  useEffect(() => { adminApi.getTenantSettings().then(s => setTenantTimezone(s.timezone)).catch(() => {}); }, []);
 
   const publicUrl = `bookaata.app/book/${subdomain}`;
   const copy = () => {
@@ -247,7 +263,10 @@ export default function BookingsPage() {
     <DashboardShell>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4, color: 'var(--text-1)' }}>Bookings</h1>
-        <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Review payment proofs and manage appointments.</p>
+        <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
+          Review payment proofs and manage appointments.
+          {tenantTimezone && <> All times shown in <strong>{tzLabel(tenantTimezone)}</strong>.</>}
+        </p>
       </div>
 
       {/* Public booking link */}
@@ -316,7 +335,7 @@ export default function BookingsPage() {
             <div style={{ fontSize: 14 }}>No bookings found</div>
           </div>
         ) : (
-          bookings.map(b => <BookingRow key={b.id} booking={b} onAction={load} />)
+          bookings.map(b => <BookingRow key={b.id} booking={b} onAction={load} tenantTimezone={tenantTimezone} />)
         )}
       </div>
     </DashboardShell>

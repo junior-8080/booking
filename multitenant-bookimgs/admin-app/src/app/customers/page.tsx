@@ -19,6 +19,7 @@ export default function CustomersPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   const [history, setHistory] = useState<Booking[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+  const [tenantTimezone, setTenantTimezone] = useState('');
   const toast = useToast();
 
   const load = async (q?: string) => {
@@ -26,6 +27,9 @@ export default function CustomersPage() {
     catch (e) { toast.error(e instanceof Error ? e.message : 'Could not load customers.'); }
   };
   useEffect(() => { load(); }, []);
+  // Booking history times are always shown in the tenant's own configured
+  // business timezone, not the viewer's device timezone.
+  useEffect(() => { adminApi.getTenantSettings().then(s => setTenantTimezone(s.timezone)).catch(() => {}); }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -121,7 +125,7 @@ export default function CustomersPage() {
                         <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color, fontWeight: 500 }}>{st.label}</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>
-                        {new Date(b.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        {new Date(b.slot_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tenantTimezone || undefined })}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{b.reference_code}</span>
