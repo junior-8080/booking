@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
-import { AvailabilityService } from './availability.service';
+import { AvailabilityService, anchorCalendarDate } from './availability.service';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware';
 
 const RangeSchema = z.object({
@@ -53,7 +53,7 @@ export class AvailabilityController extends BaseController {
   private async getSlots(req: Request, res: Response): Promise<void> {
     const serviceId = z.string().uuid().parse(req.query['service_id']);
     const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(req.query['date']);
-    const slots = await this.availabilityService.computeSlots(req.tenantDb, serviceId, new Date(dateStr), req.tenant.timezone);
+    const slots = await this.availabilityService.computeSlots(req.tenantDb, serviceId, anchorCalendarDate(dateStr, req.tenant.timezone), req.tenant.timezone);
     this.ok(res, slots);
   }
 

@@ -156,14 +156,56 @@ export class AvailabilityService {
   }
 }
 
+// Returns the tenant timezone's UTC offset (in minutes, local minus UTC — e.g.
+// -300 for America/New_York in January) at the moment `instant` falls on.
+// DST-aware: recomputed per-call rather than cached, since the offset can
+// differ by date.
+function getTimezoneOffsetMinutes(instant: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(instant);
+  const get = (type: string) => Number(parts.find(p => p.type === type)?.value ?? '0');
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+  return (asUtc - instant.getTime()) / 60_000;
+}
+
+// Converts a wall-clock "YYYY-MM-DD" + "HH:mm" (or "HH:mm:ss") pair,
+// interpreted in `timezone`, to the correct UTC Date instant. Plain
+// `new Date(\`${date}T${time}:00\`)` would parse the time-of-day in the
+// server's local timezone instead of the tenant's — this is what was
+// producing slot times shifted by a fixed number of hours for tenants/
+// clients outside the server's timezone.
+function zonedTimeToUtc(dateStr: string, timeStr: string, timeZone: string): Date {
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const naiveUtc = new Date(`${dateStr}T${normalized}Z`);
+  const offsetMinutes = getTimezoneOffsetMinutes(naiveUtc, timeZone);
+  return new Date(naiveUtc.getTime() - offsetMinutes * 60_000);
+}
+
+// Anchors a bare "YYYY-MM-DD" calendar-date string (e.g. a client's `?date=`
+// query param) to noon in the tenant's timezone, rather than `new Date(dateStr)`
+// which anchors at UTC midnight. Midnight UTC reprojects to the *previous*
+// calendar day for every timezone behind UTC (all of the Americas) once this
+// value is later formatted back into the tenant's own timezone for day-of-week
+// lookups — e.g. a client requesting "2026-08-17" (Monday) for a tenant in
+// America/New_York would silently resolve to Sunday's schedule. Noon survives
+// reprojection into any realistic timezone offset without crossing a day
+// boundary in either direction.
+export function anchorCalendarDate(dateStr: string, timeZone: string): Date {
+  return zonedTimeToUtc(dateStr, '12:00', timeZone);
+}
+
 function startOfDay(date: Date, timezone: string): Date {
   const str = date.toLocaleDateString('en-CA', { timeZone: timezone });
-  return new Date(`${str}T00:00:00`);
+  return zonedTimeToUtc(str, '00:00', timezone);
 }
 
 function endOfDay(date: Date, timezone: string): Date {
   const str = date.toLocaleDateString('en-CA', { timeZone: timezone });
-  return new Date(`${str}T23:59:59`);
+  return zonedTimeToUtc(str, '23:59:59', timezone);
 }
 
 function generateSlots(
@@ -174,7 +216,7 @@ function generateSlots(
   timezone: string,
 ): SlotInterval[] {
   const dateStr = date.toLocaleDateString('en-CA', { timeZone: timezone });
-  const parseLocal = (t: string) => new Date(`${dateStr}T${t}:00`);
+  const parseLocal = (t: string) => zonedTimeToUtc(dateStr, t, timezone);
 
   const start = parseLocal(startTime);
   const end = parseLocal(endTime);
