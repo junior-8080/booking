@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import type { PaymentSource } from '@/types';
 
@@ -29,8 +30,12 @@ export default function PaymentSourcesPage() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const toast = useToast();
 
-  const load = async () => setSources(await adminApi.listPaymentSources());
+  const load = async () => {
+    try { setSources(await adminApi.listPaymentSources()); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not load payment sources.'); }
+  };
   useEffect(() => { load(); }, []);
 
   const detailFields = TYPE_DETAIL_FIELDS[form.type] ?? [];
@@ -46,8 +51,32 @@ export default function PaymentSourcesPage() {
     try {
       if (editing) await adminApi.updatePaymentSource(editing, form);
       else await adminApi.createPaymentSource(form);
-      setShowForm(false); load();
+      setShowForm(false);
+      toast.success(editing ? 'Payment source updated.' : 'Payment source added.');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally { setLoading(false); }
+  };
+
+  const handleToggle = async (ps: PaymentSource) => {
+    try {
+      await adminApi.togglePaymentSource(ps.id);
+      toast.success(ps.is_active ? 'Payment source disabled.' : 'Payment source enabled.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not update payment source.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await adminApi.deletePaymentSource(id);
+      toast.success('Payment source deleted.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not delete payment source.');
+    }
   };
 
   return (
@@ -139,7 +168,7 @@ export default function PaymentSourcesPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => adminApi.togglePaymentSource(ps.id).then(load)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>
+              <button onClick={() => handleToggle(ps)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>
                 {ps.is_active ? 'Disable' : 'Enable'}
               </button>
               <button onClick={() => openEdit(ps)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Edit</button>
@@ -155,7 +184,7 @@ export default function PaymentSourcesPage() {
         message="This payment source will be permanently removed."
         confirmLabel="Delete"
         onConfirm={() => {
-          if (confirmDeleteId) adminApi.deletePaymentSource(confirmDeleteId).then(load);
+          if (confirmDeleteId) handleDelete(confirmDeleteId);
           setConfirmDeleteId(null);
         }}
         onCancel={() => setConfirmDeleteId(null)}

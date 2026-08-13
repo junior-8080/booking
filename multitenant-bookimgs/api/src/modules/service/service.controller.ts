@@ -23,7 +23,9 @@ const ServiceSchema = ServiceBaseSchema.refine(depositPercentageRefine, {
   message: 'Deposit percentage must be 1–100', path: ['deposit_value'],
 });
 
-const ServiceUpdateSchema = ServiceBaseSchema.partial().refine(depositPercentageRefine, {
+const ServiceUpdateSchema = ServiceBaseSchema.extend({
+  is_active: z.boolean().optional(),
+}).partial().refine(depositPercentageRefine, {
   message: 'Deposit percentage must be 1–100', path: ['deposit_value'],
 });
 

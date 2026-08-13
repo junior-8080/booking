@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import type { Booking, BookingStatus } from '@/types';
 import { formatAmount } from '@/types';
@@ -77,21 +78,32 @@ function BookingRow({ booking, onAction }: { booking: Booking; onAction: () => v
   const [rejectReason, setRejectReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const toast = useToast();
 
   const latestPayment = booking.payments.at(-1);
 
   const confirm = async () => {
     if (!latestPayment) return;
     setLoading(true);
-    try { await adminApi.confirmBooking(booking.id, latestPayment.id); onAction(); }
-    finally { setLoading(false); setExpanded(false); }
+    try {
+      await adminApi.confirmBooking(booking.id, latestPayment.id);
+      toast.success('Booking confirmed.');
+      onAction();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not confirm booking.');
+    } finally { setLoading(false); setExpanded(false); }
   };
 
   const reject = async () => {
     if (!latestPayment || !rejectReason.trim()) return;
     setLoading(true);
-    try { await adminApi.rejectBooking(booking.id, latestPayment.id, rejectReason); onAction(); }
-    finally { setLoading(false); setExpanded(false); }
+    try {
+      await adminApi.rejectBooking(booking.id, latestPayment.id, rejectReason);
+      toast.success('Booking rejected.');
+      onAction();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not reject booking.');
+    } finally { setLoading(false); setExpanded(false); }
   };
 
   return (
@@ -212,10 +224,12 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [subdomain, setSubdomain] = useState('');
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   const load = async () => {
     setLoading(true);
     try { setBookings(await adminApi.listBookings(tab || undefined)); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not load bookings.'); }
     finally { setLoading(false); }
   };
 

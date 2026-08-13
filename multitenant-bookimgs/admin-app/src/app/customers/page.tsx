@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import type { Customer, Booking } from '@/types';
 import { formatAmount } from '@/types';
@@ -18,8 +19,12 @@ export default function CustomersPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   const [history, setHistory] = useState<Booking[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+  const toast = useToast();
 
-  const load = async (q?: string) => setCustomers(await adminApi.listCustomers(q));
+  const load = async (q?: string) => {
+    try { setCustomers(await adminApi.listCustomers(q)); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not load customers.'); }
+  };
   useEffect(() => { load(); }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +36,7 @@ export default function CustomersPage() {
   const viewHistory = async (c: Customer) => {
     setSelected(c); setHistLoading(true);
     try { setHistory(await adminApi.getCustomerHistory(c.id) as Booking[]); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not load booking history.'); }
     finally { setHistLoading(false); }
   };
 

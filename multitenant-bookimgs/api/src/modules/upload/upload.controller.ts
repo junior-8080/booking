@@ -6,7 +6,7 @@ import { uploadToR2, UploadCategory } from '../../infrastructure/r2';
 import { ValidationError } from '../../core/AppError';
 
 const ALLOWED_TYPES = new Set([
-  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic',
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
 ]);
 
 const upload = multer({

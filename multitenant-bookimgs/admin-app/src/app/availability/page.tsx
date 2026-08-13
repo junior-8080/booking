@@ -2,8 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import type { Service } from '@/types';
+
+type AskConfirm = (title: string, message: string, confirmLabel: string, action: () => Promise<void>) => void;
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -148,7 +152,7 @@ function RangeForm({
 // ── Day row ───────────────────────────────────────────────────────────────────
 function DayRow({
   day, index, ranges, serviceId, defaultSlotDuration,
-  onRangeCreated, onRangeUpdated, onRangeDeleted, onDayCleared,
+  onRangeCreated, onRangeUpdated, onRangeDeleted, onDayCleared, askConfirm,
 }: {
   day: string;
   index: number;
@@ -159,51 +163,83 @@ function DayRow({
   onRangeUpdated: (r: ScheduleRange) => void;
   onRangeDeleted: (id: string) => void;
   onDayCleared: (dayIndex: number) => void;
+  askConfirm: AskConfirm;
 }) {
   const active = ranges.length > 0;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const toast = useToast();
 
   // Reset edit state when service changes
   useEffect(() => { setEditingId(null); setShowAdd(false); }, [serviceId]);
 
-  const handleToggle = async () => {
+  const handleToggle = () => {
+    if (active) {
+      askConfirm(
+        `Close ${day}?`,
+        `This removes all ${ranges.length} time range${ranges.length !== 1 ? 's' : ''} for ${day}. Existing bookings are not affected.`,
+        'Close day',
+        async () => {
+          setToggling(true);
+          try {
+            await adminApi.clearDay(serviceId, index);
+            onDayCleared(index);
+            setShowAdd(false);
+            setEditingId(null);
+            toast.success(`${day} closed.`);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Could not update hours.');
+          } finally {
+            setToggling(false);
+          }
+        },
+      );
+      return;
+    }
     setToggling(true);
-    try {
-      if (active) {
-        await adminApi.clearDay(serviceId, index);
-        onDayCleared(index);
-        setShowAdd(false);
-        setEditingId(null);
-      } else {
-        const created = await adminApi.createRange(serviceId, {
-          day_of_week: index,
-          start_time: '09:00',
-          end_time: '17:00',
-          slot_duration_minutes: defaultSlotDuration,
-          capacity: 1,
-        }) as unknown as ScheduleRange;
-        onRangeCreated(created);
-      }
-    } finally { setToggling(false); }
+    adminApi.createRange(serviceId, {
+      day_of_week: index,
+      start_time: '09:00',
+      end_time: '17:00',
+      slot_duration_minutes: defaultSlotDuration,
+      capacity: 1,
+    }).then(created => {
+      onRangeCreated(created as unknown as ScheduleRange);
+    }).catch((e: unknown) => {
+      toast.error(e instanceof Error ? e.message : 'Could not update hours.');
+    }).finally(() => setToggling(false));
   };
 
   const handleAddRange = async (data: { start_time: string; end_time: string; slot_duration_minutes: number; capacity: number }) => {
     const created = await adminApi.createRange(serviceId, { day_of_week: index, ...data }) as unknown as ScheduleRange;
     onRangeCreated(created);
     setShowAdd(false);
+    toast.success('Time range added.');
   };
 
   const handleUpdateRange = (id: string) => async (data: { start_time: string; end_time: string; slot_duration_minutes: number; capacity: number }) => {
     const updated = await adminApi.updateRange(id, data) as unknown as ScheduleRange;
     onRangeUpdated(updated);
     setEditingId(null);
+    toast.success('Time range updated.');
   };
 
-  const handleDeleteRange = async (id: string) => {
-    await adminApi.deleteRange(id);
-    onRangeDeleted(id);
+  const handleDeleteRange = (range: ScheduleRange) => {
+    askConfirm(
+      'Remove time range?',
+      `Remove ${range.start_time}–${range.end_time} on ${day}? Existing bookings are not affected.`,
+      'Remove',
+      async () => {
+        try {
+          await adminApi.deleteRange(range.id);
+          onRangeDeleted(range.id);
+          toast.success('Time range removed.');
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'Could not remove time range.');
+        }
+      },
+    );
   };
 
   return (
@@ -279,7 +315,7 @@ function DayRow({
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteRange(range.id)}
+                      onClick={() => handleDeleteRange(range)}
                       style={{ padding: '5px 8px', borderRadius: 6, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                       title="Remove range"
                     >
@@ -384,6 +420,15 @@ export default function AvailabilityPage() {
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [showAddException, setShowAddException] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; confirmLabel: string; action: () => Promise<void> } | null>(null);
+  const toast = useToast();
+
+  const askConfirm: AskConfirm = (title, message, confirmLabel, action) => setConfirmState({ title, message, confirmLabel, action });
+  const runConfirm = () => {
+    const pending = confirmState;
+    setConfirmState(null);
+    pending?.action();
+  };
 
   useEffect(() => {
     adminApi.listServices().then(s => {
@@ -423,11 +468,25 @@ export default function AvailabilityPage() {
   const handleExceptionAdded = (ex: Exception) => {
     setExceptions(prev => [...prev, ex].sort((a, b) => a.date.localeCompare(b.date)));
     setShowAddException(false);
+    toast.success('Exception added.');
   };
 
-  const removeException = async (id: string) => {
-    await adminApi.deleteException(id);
-    setExceptions(prev => prev.filter(e => e.id !== id));
+  const removeException = (ex: Exception) => {
+    const dateLabel = new Date(ex.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    askConfirm(
+      'Remove exception?',
+      `Remove the exception for ${dateLabel}? Regular hours will apply again for that date.`,
+      'Remove',
+      async () => {
+        try {
+          await adminApi.deleteException(ex.id);
+          setExceptions(prev => prev.filter(e => e.id !== ex.id));
+          toast.success('Exception removed.');
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'Could not remove exception.');
+        }
+      },
+    );
   };
 
   return (
@@ -492,6 +551,7 @@ export default function AvailabilityPage() {
                   onRangeUpdated={handleRangeUpdated}
                   onRangeDeleted={handleRangeDeleted}
                   onDayCleared={handleDayCleared}
+                  askConfirm={askConfirm}
                 />
               ))}
             </div>
@@ -547,7 +607,7 @@ export default function AvailabilityPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => removeException(ex.id)}
+                      onClick={() => removeException(ex)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
                       title="Remove exception"
                     >
@@ -561,6 +621,15 @@ export default function AvailabilityPage() {
 
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        confirmLabel={confirmState?.confirmLabel ?? 'Confirm'}
+        onConfirm={runConfirm}
+        onCancel={() => setConfirmState(null)}
+      />
     </DashboardShell>
   );
 }

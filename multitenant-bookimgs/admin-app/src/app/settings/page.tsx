@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
 import type { TenantSettings, CountryOption, Brand } from '@/types';
@@ -51,9 +52,8 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     Promise.all([adminApi.getTenantSettings(), adminApi.listCountries(), adminApi.listBrands()])
@@ -71,7 +71,7 @@ export default function SettingsPage() {
           booking_confirmation_sla_hours: s.booking_confirmation_sla_hours,
         });
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .catch(e => toast.error(e instanceof Error ? e.message : 'Failed to load settings'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -100,8 +100,6 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    setError('');
-    setSaved(false);
     try {
       // Resolve logo URL
       let logo_url: string | null | undefined = undefined;
@@ -131,10 +129,9 @@ export default function SettingsPage() {
         booking_confirmation_sla_hours: settingsForm.booking_confirmation_sla_hours,
       });
       setSettings(updated);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success('Settings saved.');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      toast.error(e instanceof Error ? e.message : 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -155,12 +152,6 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4 }}>Settings</h1>
         <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Manage your profile, location, and booking rules.</p>
       </div>
-
-      {error && (
-        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontSize: 13, marginBottom: 20 }}>
-          {error}
-        </div>
-      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 14 }}>Loading…</div>
@@ -343,7 +334,6 @@ export default function SettingsPage() {
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>
-            {saved && <span style={{ fontSize: 13, color: 'var(--success-fg, #10b981)', fontWeight: 500 }}>✓ Saved</span>}
           </div>
 
         </div>

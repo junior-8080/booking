@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
 import type { Service, Brand } from '@/types';
@@ -61,6 +62,8 @@ export default function ServicesPage() {
   const [imagePreview, setImagePreview] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [defaultCurrency, setDefaultCurrency] = useState('USD');
+  const [showInactive, setShowInactive] = useState(false);
+  const toast = useToast();
 
   const load = async () => {
     const [s, b, settings] = await Promise.all([adminApi.listServices(), adminApi.listBrands(), adminApi.getTenantSettings()]);
@@ -124,20 +127,32 @@ export default function ServicesPage() {
       if (editing) await adminApi.updateService(editing, payload);
       else await adminApi.createService(payload);
       setShowForm(false);
+      toast.success(editing ? 'Service updated.' : 'Service created.');
       load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    await adminApi.deleteService(id);
-    setShowForm(false);
-    setConfirmDeleteId(null);
-    load();
+    try {
+      await adminApi.deleteService(id);
+      setShowForm(false);
+      setConfirmDeleteId(null);
+      toast.success('Service deleted.');
+      load();
+    } catch (err) {
+      setConfirmDeleteId(null);
+      toast.error(err instanceof Error ? err.message : 'Could not delete service. Please try again.');
+    }
   };
 
   const s = (k: keyof typeof form, v: unknown) => setForm(p => ({ ...p, [k]: v }));
+
+  const inactiveCount = services.filter(svc => !svc.is_active).length;
+  const visibleServices = services.filter(svc => showInactive || svc.is_active);
 
   return (
     <DashboardShell>
@@ -148,13 +163,23 @@ export default function ServicesPage() {
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Manage your bookable services and pricing.</p>
         </div>
         {!showForm && (
-          <button
-            onClick={openCreate}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            New service
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {inactiveCount > 0 && (
+              <button
+                onClick={() => setShowInactive(v => !v)}
+                style={{ padding: '9px 14px', borderRadius: 9, border: '1px solid var(--border)', background: showInactive ? 'var(--bg-subtle)' : 'var(--surface)', color: 'var(--text-2)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+              >
+                {showInactive ? 'Hide inactive' : `Show inactive (${inactiveCount})`}
+              </button>
+            )}
+            <button
+              onClick={openCreate}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              New service
+            </button>
+          </div>
         )}
       </div>
 
@@ -219,7 +244,7 @@ export default function ServicesPage() {
                       </div>
                     )}
                   </div>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} style={{ display: 'none' }} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" onChange={handleImageChange} style={{ display: 'none' }} />
                 </label>
                 {imagePreview && (
                   <button
@@ -411,18 +436,18 @@ export default function ServicesPage() {
       )}
 
       {/* Service grid */}
-      {services.length === 0 && !showForm && (
+      {visibleServices.length === 0 && !showForm && (
         <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--text-3)' }}>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 14px', display: 'block', opacity: 0.35 }}>
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
           </svg>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No services yet</div>
-          <div style={{ fontSize: 13 }}>Add your first service to start accepting bookings.</div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>{services.length === 0 ? 'No services yet' : 'No active services'}</div>
+          <div style={{ fontSize: 13 }}>{services.length === 0 ? 'Add your first service to start accepting bookings.' : 'All your services are currently inactive.'}</div>
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-        {services.map(svc => (
+        {visibleServices.map(svc => (
           <button
             key={svc.id}
             onClick={() => openEdit(svc)}
@@ -476,7 +501,7 @@ export default function ServicesPage() {
       <ConfirmModal
         open={!!confirmDeleteId}
         title="Delete service?"
-        message="This service will be permanently removed. Existing bookings are not affected."
+        message='This service will be hidden from your booking page and marked inactive. Existing bookings are not affected — you can restore it later from "Show inactive".'
         confirmLabel="Delete service"
         onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
         onCancel={() => setConfirmDeleteId(null)}
