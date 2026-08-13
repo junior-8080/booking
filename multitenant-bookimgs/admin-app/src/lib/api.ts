@@ -106,9 +106,9 @@ export const adminApi = {
 
   // Brands
   listBrands: () => request<import('../types').Brand[]>('/brands'),
-  createBrand: (data: { name: string; logo_url?: string | null; description?: string; is_primary?: boolean }) =>
+  createBrand: (data: { name: string; logo_url?: string | null; description?: string; terms_conditions?: string; whatsapp_number?: string | null; is_primary?: boolean }) =>
     request<import('../types').Brand>('/brands', { method: 'POST', body: JSON.stringify(data) }),
-  updateBrand: (id: string, data: Partial<{ name: string; logo_url: string | null; description: string; is_primary: boolean }>) =>
+  updateBrand: (id: string, data: Partial<{ name: string; logo_url: string | null; description: string; terms_conditions: string; whatsapp_number: string | null; is_primary: boolean }>) =>
     request<import('../types').Brand>(`/brands/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   // Auth — current user profile

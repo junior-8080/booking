@@ -9,6 +9,7 @@ const BrandSchema = z.object({
   logo_url: z.string().url().nullable().optional(),
   description: z.string().optional(),
   terms_conditions: z.string().optional(),
+  whatsapp_number: z.string().regex(/^\+?[0-9\s-]{7,20}$/, 'Enter a valid phone number, e.g. +1 555 000 0000').nullable().optional(),
   is_primary: z.boolean().optional(),
 });
 

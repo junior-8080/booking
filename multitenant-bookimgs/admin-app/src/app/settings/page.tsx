@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const [brand, setBrand] = useState<Brand | null>(null);
 
   // Profile form (brand)
-  const [profileForm, setProfileForm] = useState({ name: '', description: '', terms_conditions: '' });
+  const [profileForm, setProfileForm] = useState({ name: '', description: '', terms_conditions: '', whatsapp_number: '' });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
@@ -63,7 +63,7 @@ export default function SettingsPage() {
         const primary = b.find(br => br.is_primary) ?? b[0] ?? null;
         setBrand(primary);
         setLogoPreview(primary?.logo_url ?? null);
-        setProfileForm({ name: primary?.name ?? s.name, description: primary?.description ?? '', terms_conditions: primary?.terms_conditions ?? '' });
+        setProfileForm({ name: primary?.name ?? s.name, description: primary?.description ?? '', terms_conditions: primary?.terms_conditions ?? '', whatsapp_number: primary?.whatsapp_number ?? '' });
         setSettingsForm({
           country: s.country_code,
           timezone: s.timezone,
@@ -110,6 +110,7 @@ export default function SettingsPage() {
         name: profileForm.name,
         description: profileForm.description || undefined,
         terms_conditions: profileForm.terms_conditions || undefined,
+        whatsapp_number: profileForm.whatsapp_number.trim() || null,
         ...(logo_url !== undefined ? { logo_url } : {}),
       };
 
@@ -219,6 +220,17 @@ export default function SettingsPage() {
                   rows={2}
                   style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
                 />
+              </div>
+              <div>
+                <label style={lbl}>WhatsApp number <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>
+                <input
+                  type="tel"
+                  value={profileForm.whatsapp_number}
+                  onChange={e => setProfileForm(p => ({ ...p, whatsapp_number: e.target.value }))}
+                  placeholder="e.g. +1 555 000 0000"
+                  style={inp}
+                />
+                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Include your country code. Shown as a &quot;Message us&quot; button on your public booking page.</p>
               </div>
               <div>
                 <label style={lbl}>Terms & Conditions <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>

@@ -199,6 +199,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const [pageError, setPageError] = useState<string | null>(null);
   const [bookingsBlocked, setBookingsBlocked] = useState(false);
   const [showTc, setShowTc] = useState(false);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
 
   useEffect(() => {
     const storageKey = `bookimgs_pending_${subdomain}`;
@@ -358,6 +359,10 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   };
 
   const primaryBrand = brands.find(b => b.is_primary) ?? brands[0];
+  const whatsappDigits = primaryBrand?.whatsapp_number?.replace(/[^0-9]/g, '') ?? '';
+  const whatsappLink = whatsappDigits
+    ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`Hi${primaryBrand?.name ? ' ' + primaryBrand.name : ''}, I have a question about booking an appointment.`)}`
+    : '';
   const serviceName = selectedService?.name ?? booking?.service?.name;
   const depositLabel = booking
     ? formatAmount(booking.required_amount, booking.required_currency)
@@ -803,23 +808,42 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
             </div>
           </div>
 
-          {/* T&C button — always visible once brand loads */}
+          {/* Contact & terms cluster — fixed top-right so it never collides with the bottom sticky CTA */}
           {primaryBrand && (
-            <button
-              onClick={() => setShowTc(true)}
-              style={{
-                position: 'fixed', bottom: 20, right: 20, zIndex: 50,
-                padding: '7px 13px', borderRadius: 20,
-                border: '1px solid rgba(0,0,0,0.12)',
-                background: 'rgba(0,0,0,0.28)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                fontSize: 12, fontWeight: 600, color: '#fff',
-                cursor: 'pointer', letterSpacing: 0.2,
-              }}
-            >
-              T&amp;C
-            </button>
+            <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+              {whatsappLink && (
+                <button
+                  className="tap"
+                  onClick={() => setShowWhatsApp(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px 8px 10px', borderRadius: 20,
+                    border: 'none', background: '#25D366',
+                    boxShadow: '0 4px 14px rgba(37,211,102,0.45)',
+                    fontSize: 13, fontWeight: 700, color: '#fff',
+                    cursor: 'pointer', letterSpacing: 0.1, transition: 'transform 0.12s',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.35 5.07L2 22l5.06-1.32A9.94 9.94 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.2 14.2c-.22.62-1.28 1.2-1.77 1.24-.45.05-.98.07-1.58-.1-.36-.1-.83-.27-1.42-.53-2.5-1.08-4.13-3.6-4.26-3.77-.12-.17-1.02-1.36-1.02-2.6 0-1.23.65-1.84.88-2.09.22-.24.48-.3.64-.3.16 0 .32 0 .46.01.15.01.35-.06.55.42.2.5.7 1.72.76 1.84.06.13.1.28.02.45-.08.17-.12.28-.24.43-.12.15-.25.33-.36.44-.12.12-.24.25-.1.49.14.24.62 1.02 1.32 1.65.91.81 1.67 1.06 1.91 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.16 1.2z" /></svg>
+                  WhatsApp
+                </button>
+              )}
+              <button
+                className="tap"
+                onClick={() => setShowTc(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px 8px 10px', borderRadius: 20,
+                  border: 'none', background: A,
+                  boxShadow: `0 4px 14px ${A}55`,
+                  fontSize: 13, fontWeight: 700, color: '#fff',
+                  cursor: 'pointer', letterSpacing: 0.1, transition: 'transform 0.12s',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                Terms
+              </button>
+            </div>
           )}
 
           {/* T&C modal */}
@@ -842,6 +866,51 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                   {primaryBrand?.terms_conditions || (
                     <span style={{ color: 'oklch(58% 0.02 50)', fontStyle: 'italic' }}>No terms & conditions have been set for this business.</span>
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp modal */}
+          {showWhatsApp && (
+            <div
+              onClick={() => setShowWhatsApp(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ width: '100%', maxWidth: 440, borderRadius: '20px 20px 0 0', background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: 'oklch(22% 0.015 50)' }}>Message us on WhatsApp</div>
+                  <button onClick={() => setShowWhatsApp(false)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="oklch(40% 0.01 50)" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <div style={{ padding: '20px 20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>
+                    {primaryBrand?.name ? `Have a question for ${primaryBrand.name}?` : 'Have a question before booking?'} Reach out directly.
+                  </p>
+
+                  <button
+                    className="tap"
+                    onClick={() => copyText(primaryBrand?.whatsapp_number ?? '', 'whatsapp')}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '13px 16px', borderRadius: 14, border: `1.5px dashed ${A}`, background: A_TINT, cursor: 'pointer', transition: 'transform 0.12s' }}
+                  >
+                    <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700, letterSpacing: 0.3, color: A_DARK }}>{primaryBrand?.whatsapp_number}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: A, flexShrink: 0 }}>{copied === 'whatsapp' ? '✓ Copied' : 'Copy'}</span>
+                  </button>
+
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="tap"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 16px', borderRadius: 14, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 14px rgba(37,211,102,0.4)', transition: 'transform 0.12s' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.35 5.07L2 22l5.06-1.32A9.94 9.94 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.2 14.2c-.22.62-1.28 1.2-1.77 1.24-.45.05-.98.07-1.58-.1-.36-.1-.83-.27-1.42-.53-2.5-1.08-4.13-3.6-4.26-3.77-.12-.17-1.02-1.36-1.02-2.6 0-1.23.65-1.84.88-2.09.22-.24.48-.3.64-.3.16 0 .32 0 .46.01.15.01.35-.06.55.42.2.5.7 1.72.76 1.84.06.13.1.28.02.45-.08.17-.12.28-.24.43-.12.15-.25.33-.36.44-.12.12-.24.25-.1.49.14.24.62 1.02 1.32 1.65.91.81 1.67 1.06 1.91 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.16 1.2z" /></svg>
+                    Open WhatsApp
+                  </a>
                 </div>
               </div>
             </div>

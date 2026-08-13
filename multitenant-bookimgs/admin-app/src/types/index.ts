@@ -1,4 +1,4 @@
-export interface Brand { id: string; name: string; logo_url: string | null; description: string | null; terms_conditions: string | null; is_primary: boolean; }
+export interface Brand { id: string; name: string; logo_url: string | null; description: string | null; terms_conditions: string | null; whatsapp_number: string | null; is_primary: boolean; }
 export interface Slot { start: string; end: string; available: boolean; }
 export interface Service { id: string; brand_id: string; name: string; description: string | null; image_url: string | null; duration_minutes: number; price_amount: number; price_currency: string; deposit_type: 'PERCENTAGE' | 'FIXED'; deposit_value: number; is_active: boolean; brand?: Brand; }
 export interface Customer { id: string; full_name: string; email: string | null; phone: string; notes: string | null; }

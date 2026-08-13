@@ -144,6 +144,7 @@ model Brand {
   logo_url          String?
   description       String?
   terms_conditions  String?
+  whatsapp_number   String?
   is_primary        Boolean @default(true)
   created_at  DateTime @default(now()) @db.Timestamptz
   updated_at  DateTime @updatedAt @db.Timestamptz
