@@ -22,10 +22,13 @@ import { BookingController } from './modules/booking/booking.controller';
 import { BookingService } from './modules/booking/booking.service';
 import { PaymentSourceController } from './modules/payment-source/paymentSource.controller';
 import { PaymentSourceService } from './modules/payment-source/paymentSource.service';
+import { TenantUserController } from './modules/tenant-user/tenantUser.controller';
+import { TenantUserService } from './modules/tenant-user/tenantUser.service';
 import { AnalyticsController } from './modules/analytics/analytics.controller';
 import { AnalyticsService } from './modules/analytics/analytics.service';
 import { OnboardingController } from './modules/onboarding/onboarding.controller';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
+import { CountryController } from './modules/country/country.controller';
 import { UploadController } from './modules/upload/upload.controller';
 import { TenantController } from './modules/tenant/tenant.controller';
 import { TenantService } from './modules/tenant/tenant.service';
@@ -73,6 +76,14 @@ export function createApp() {
   // Onboarding — no tenant required (creates a new tenant)
   app.use('/api/onboarding', (req, res, next) => {
     const ctrl = new OnboardingController(new OnboardingService());
+    ctrl.router(req, res, next);
+  });
+
+  // Countries — public, no tenant required. Single source of truth for
+  // country/timezone/currency data; both admin-app and mobile-app fetch
+  // this instead of keeping their own copies.
+  app.use('/api/countries', (req, res, next) => {
+    const ctrl = new CountryController();
     ctrl.router(req, res, next);
   });
 
@@ -145,6 +156,11 @@ export function createApp() {
 
   app.use('/api/payment-sources', (req, res, next) => {
     const ctrl = new PaymentSourceController(new PaymentSourceService(req.tenantDb));
+    ctrl.router(req, res, next);
+  });
+
+  app.use('/api/tenant-users', (req, res, next) => {
+    const ctrl = new TenantUserController(new TenantUserService(req.tenantDb));
     ctrl.router(req, res, next);
   });
 

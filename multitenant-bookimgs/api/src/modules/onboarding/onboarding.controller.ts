@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { OnboardingService } from './onboarding.service';
-import { COUNTRIES, COUNTRY_CODES } from '../../config/countries';
+import { COUNTRY_CODES } from '../../config/countries';
 
 const RegisterSchema = z.object({
   business_name: z.string().min(2).max(80),
@@ -23,13 +23,6 @@ export class OnboardingController extends BaseController {
 
   protected registerRoutes(): void {
     this.router.post('/register', this.bind(this.register));
-    this.router.get('/countries', this.bind(this.countries));
-  }
-
-  private async countries(_req: Request, res: Response): Promise<void> {
-    this.ok(res, Object.entries(COUNTRIES).map(([code, c]) => ({
-      code, name: c.name, currency: c.currency, timezones: c.timezones, default_timezone: c.defaultTimezone,
-    })));
   }
 
   private async register(req: Request, res: Response): Promise<void> {

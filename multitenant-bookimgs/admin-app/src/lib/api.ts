@@ -142,7 +142,7 @@ export const adminApi = {
   getTenantSettings: () => request<import('../types').TenantSettings>('/tenant/settings'),
   updateTenantSettings: (data: unknown) => request<import('../types').TenantSettings>('/tenant/settings', { method: 'PATCH', body: JSON.stringify(data) }),
   listCountries: () =>
-    fetch(`${API_BASE}/onboarding/countries`)
+    fetch(`${API_BASE}/countries`)
       .then(r => r.json())
       .then(j => (j.data ?? []) as import('../types').CountryOption[]),
 };

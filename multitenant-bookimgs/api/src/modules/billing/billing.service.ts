@@ -69,7 +69,7 @@ export class BillingService {
     };
   }
 
-  async initializePayment(tenantId: string, email: string, plan: Plan): Promise<{ checkout_url: string }> {
+  async initializePayment(tenantId: string, email: string, plan: Plan, callbackUrl?: string): Promise<{ checkout_url: string }> {
     if (!env.PAYSTACK_SECRET_KEY) {
       throw new AppError('Paystack not configured', 500, 'PAYSTACK_NOT_CONFIGURED');
     }
@@ -81,7 +81,7 @@ export class BillingService {
       email,
       amount: amountPesewas,
       currency,
-      callback_url: env.BILLING_CALLBACK_URL ?? `https://${env.APP_BASE_DOMAIN}/billing`,
+      callback_url: callbackUrl ?? env.BILLING_CALLBACK_URL ?? `https://${env.APP_BASE_DOMAIN}/billing`,
       metadata: {
         purpose: 'subscription',
         tenant_id: tenantId,

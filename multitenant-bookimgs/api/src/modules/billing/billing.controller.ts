@@ -7,6 +7,10 @@ import { requireAuth } from '../../middleware/auth.middleware';
 const PaySchema = z.object({
   email: z.string().email(),
   plan:  z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+  // Lets a native client (no browser URL bar for Paystack to redirect within)
+  // supply its own deep link so WebBrowser.openAuthSessionAsync can detect
+  // completion — web omits this and falls back to BILLING_CALLBACK_URL.
+  callback_url: z.string().url().optional(),
 });
 const VerifySchema = z.object({ reference: z.string().min(1) });
 
@@ -27,8 +31,8 @@ export class BillingController extends BaseController {
   }
 
   private async pay(req: Request, res: Response): Promise<void> {
-    const { email, plan } = PaySchema.parse(req.body);
-    const data = await this.billingService.initializePayment(req.tenantId, email, plan);
+    const { email, plan, callback_url } = PaySchema.parse(req.body);
+    const data = await this.billingService.initializePayment(req.tenantId, email, plan, callback_url);
     this.ok(res, data);
   }
 

@@ -141,6 +141,17 @@ export class BookingService extends BaseRepository {
       { delay: Math.floor(params.slotHoldMinutes * 60_000 * 0.5), jobId: `reminder-${booking.id}` },
     );
 
+    // Push-alert the tenant — a slot was just held, faster awareness than waiting on proof
+    await notificationsQueue.add('send', {
+      tenantId: params.tenantId,
+      bookingId: booking.id,
+      template: 'tenant_booking_created',
+      recipientType: 'TENANT',
+      channels: ['PUSH'],
+      to: {},
+      data: { referenceCode, serviceName: service.name, holdExpiresAt: holdExpiresAt.toISOString() },
+    } satisfies NotificationJob);
+
     return { booking, customer };
   }
 
@@ -199,7 +210,7 @@ export class BookingService extends BaseRepository {
       bookingId: params.bookingId,
       template: 'tenant_new_booking_alert',
       recipientType: 'TENANT',
-      channels: ['EMAIL', 'SMS'],
+      channels: ['EMAIL', 'SMS', 'PUSH'],
       to: {},
       data: { referenceCode: booking.reference_code, amount: params.amount, currency: params.currency },
     } satisfies NotificationJob);

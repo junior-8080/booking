@@ -1,5 +1,9 @@
+import countriesData from './countries.json';
+
 // Supported countries. Currency is always derived server-side from the country —
-// clients can never set it directly.
+// clients can never set it directly. Data lives in countries.json — the single
+// source of truth served to web/mobile via GET /api/countries, not duplicated
+// in either client.
 export interface CountryConfig {
   name: string;
   currency: string;
@@ -7,34 +11,7 @@ export interface CountryConfig {
   defaultTimezone: string;
 }
 
-export const COUNTRIES: Record<string, CountryConfig> = {
-  US: {
-    name: 'United States',
-    currency: 'USD',
-    timezones: [
-      'America/New_York',
-      'America/Chicago',
-      'America/Denver',
-      'America/Phoenix',
-      'America/Los_Angeles',
-      'America/Anchorage',
-      'Pacific/Honolulu',
-    ],
-    defaultTimezone: 'America/New_York',
-  },
-  GH: {
-    name: 'Ghana',
-    currency: 'GHS',
-    timezones: ['Africa/Accra'],
-    defaultTimezone: 'Africa/Accra',
-  },
-  GB: {
-    name: 'United Kingdom',
-    currency: 'GBP',
-    timezones: ['Europe/London'],
-    defaultTimezone: 'Europe/London',
-  },
-};
+export const COUNTRIES: Record<string, CountryConfig> = countriesData;
 
 export const COUNTRY_CODES = Object.keys(COUNTRIES) as [string, ...string[]];
 

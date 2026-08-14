@@ -27,7 +27,7 @@ export interface NotificationJob {
   bookingId?: string;
   template: string;
   recipientType: 'CLIENT' | 'TENANT';
-  channels: Array<'EMAIL' | 'SMS'>;
+  channels: Array<'EMAIL' | 'SMS' | 'PUSH'>;
   to: {
     email?: string;
     phone?: string;

@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { env } from '../config/env';
 import { prisma, createTenantClient } from '../db/prisma';
-import { BookingExpiryJob } from '../infrastructure/queue';
+import { BookingExpiryJob, notificationsQueue, NotificationJob } from '../infrastructure/queue';
 
 const connection = {
   host: new URL(env.REDIS_URL).hostname,
@@ -23,6 +23,16 @@ export const bookingExpiryWorker = new Worker<BookingExpiryJob>(
       where: { id: bookingId },
       data: { status: 'REJECTED' },
     });
+
+    await notificationsQueue.add('send', {
+      tenantId,
+      bookingId,
+      template: 'tenant_booking_expired',
+      recipientType: 'TENANT',
+      channels: ['PUSH'],
+      to: {},
+      data: { referenceCode: booking.reference_code },
+    } satisfies NotificationJob);
 
     console.log(`[BookingExpiryWorker] booking ${bookingId} expired`);
   },

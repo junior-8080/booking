@@ -93,6 +93,7 @@ enum NotificationRecipientType {
 enum NotificationChannel {
   EMAIL
   SMS
+  PUSH
 }
 
 enum NotificationStatus {
@@ -133,6 +134,7 @@ model Tenant {
   bookings             Booking[]
   payments             Payment[]
   notifications        Notification[]
+  push_tokens          PushToken[]
 
   @@map("tenants")
 }
@@ -207,9 +209,25 @@ model TenantUser {
   tenant                  Tenant         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   confirmed_bookings      Booking[]      @relation("ConfirmedBy")
   reviewed_payments       Payment[]      @relation("ReviewedBy")
+  push_tokens             PushToken[]
 
   @@unique([tenant_id, email])
   @@map("tenant_users")
+}
+
+model PushToken {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenant_id      String   @db.Uuid
+  tenant_user_id String   @db.Uuid
+  token          String
+  platform       String
+  created_at     DateTime @default(now()) @db.Timestamptz
+
+  tenant      Tenant     @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenant_user TenantUser @relation(fields: [tenant_user_id], references: [id], onDelete: Cascade)
+
+  @@unique([tenant_user_id, token])
+  @@map("push_tokens")
 }
 
 model Customer {

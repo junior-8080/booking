@@ -27,6 +27,7 @@ const TENANT_SCOPED_MODELS = new Set([
   'booking',
   'payment',
   'notification',
+  'pushToken',
 ]);
 
 export function createTenantClient(tenantId: string): PrismaClient {

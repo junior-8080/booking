@@ -1,5 +1,6 @@
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { PrismaClient } from '@prisma/client';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { BaseRepository } from '../../core/BaseRepository';
 import { SMSProvider } from './providers/SMSProvider.interface';
 import { TwilioUSProvider } from './providers/TwilioUSProvider';
@@ -22,6 +23,14 @@ const TEMPLATES: Record<string, (data: Record<string, unknown>) => { subject: st
     subject: 'New booking proof submitted',
     text: `A client submitted payment proof for booking ${d['referenceCode']}. Amount: ${d['amount']} ${d['currency']}. Please review in your dashboard.`,
   }),
+  tenant_booking_created: (d) => ({
+    subject: 'New booking slot held',
+    text: `A client just held a slot for ${d['serviceName']} (ref ${d['referenceCode']}). They have until ${d['holdExpiresAt']} to submit payment.`,
+  }),
+  tenant_booking_expired: (d) => ({
+    subject: 'Booking expired — no payment received',
+    text: `Booking ${d['referenceCode']} expired because no payment proof was submitted in time. The slot has been released.`,
+  }),
   booking_confirmed: (d) => ({
     subject: "You're booked!",
     text: `Your deposit has been confirmed. Booking reference: ${d['referenceCode']}. See you at your appointment!`,
@@ -39,9 +48,11 @@ const TEMPLATES: Record<string, (data: Record<string, unknown>) => { subject: st
 export class NotificationService extends BaseRepository {
   private readonly smsProviders: Map<string, SMSProvider>;
   private readonly brevoSms: BrevoProvider;
+  private readonly expo: Expo;
 
   constructor(db: PrismaClient) {
     super(db);
+    this.expo = new Expo();
     this.brevoSms = new BrevoProvider();
     // Country-specific fallbacks, used only when Brevo is not configured.
     // Routing is by the RECIPIENT's number prefix, not the tenant's country.
@@ -56,7 +67,7 @@ export class NotificationService extends BaseRepository {
     bookingId?: string;
     template: string;
     recipientType: 'CLIENT' | 'TENANT';
-    channels: Array<'EMAIL' | 'SMS'>;
+    channels: Array<'EMAIL' | 'SMS' | 'PUSH'>;
     to: { email?: string; phone?: string; name?: string };
     data: Record<string, unknown>;
   }): Promise<void> {
@@ -79,6 +90,8 @@ export class NotificationService extends BaseRepository {
           await this.sendEmail(params.to.email, params.to.name ?? '', subject, text);
         } else if (channel === 'SMS' && params.to.phone) {
           await this.sendSMS(params.to.phone, text);
+        } else if (channel === 'PUSH') {
+          await this.sendPush(subject, text, { ...params.data, bookingId: params.bookingId ?? null });
         }
 
         await this.db.notification.update({
@@ -157,5 +170,21 @@ export class NotificationService extends BaseRepository {
 
     const provider = this.smsProviders.get(countryCode) ?? this.smsProviders.get('US')!;
     await provider.send({ to: phone, body });
+  }
+
+  // Pushes go to every device the tenant's staff have registered — anyone
+  // with the app installed can act on it, not just one designated user.
+  private async sendPush(title: string, body: string, data: Record<string, unknown>): Promise<void> {
+    const tokens = await this.db.pushToken.findMany({ select: { token: true } });
+    const validTokens = tokens.map(t => t.token).filter(t => Expo.isExpoPushToken(t));
+    if (validTokens.length === 0) return;
+
+    const messages: ExpoPushMessage[] = validTokens.map(token => ({ to: token, title, body, data, sound: 'default' }));
+    const chunks = this.expo.chunkPushNotifications(messages);
+    for (const chunk of chunks) {
+      const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+      const err = tickets.find(t => t.status === 'error');
+      if (err) throw new Error(`Expo push error: ${'message' in err ? err.message : 'unknown'}`);
+    }
   }
 }
