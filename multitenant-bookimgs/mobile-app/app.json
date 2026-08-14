@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.mukarocore.bookaatabusiness"
+      "bundleIdentifier": "com.mukarocore.bookaatabusiness",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.mukarocore.bookaatabusiness",

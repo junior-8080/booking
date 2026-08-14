@@ -74,6 +74,11 @@ function RootNavigator() {
         <Stack.Screen name="login" />
         <Stack.Screen name="onboarding" />
       </Stack.Protected>
+      {/* Reachable regardless of auth state — linked from onboarding (signup)
+          and from Settings (authenticated), so they aren't wrapped in either
+          Protected guard above. */}
+      <Stack.Screen name="terms" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="privacy" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

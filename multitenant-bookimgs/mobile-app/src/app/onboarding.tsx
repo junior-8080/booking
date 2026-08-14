@@ -269,6 +269,17 @@ export default function OnboardingScreen() {
                 />
                 <ThemedText type="small" style={styles.hint}>Use at least 8 characters.</ThemedText>
               </View>
+              <ThemedText type="small" style={styles.termsNotice}>
+                By creating an account, you agree to our{' '}
+                <ThemedText type="small" style={styles.termsLink} onPress={() => router.push('/terms')}>
+                  Terms & Conditions
+                </ThemedText>
+                {' '}and{' '}
+                <ThemedText type="small" style={styles.termsLink} onPress={() => router.push('/privacy')}>
+                  Privacy Policy
+                </ThemedText>
+                .
+              </ThemedText>
             </View>
           )}
 
@@ -380,6 +391,14 @@ const styles = StyleSheet.create({
   hint: {
     marginTop: 6,
     color: Brand.text3,
+  },
+  termsNotice: {
+    color: Brand.text3,
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: Brand.brand,
+    fontWeight: '600',
   },
   hintBrand: {
     color: Brand.brand,

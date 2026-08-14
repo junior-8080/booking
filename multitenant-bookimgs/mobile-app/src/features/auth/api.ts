@@ -25,3 +25,8 @@ export function login(email: string, password: string): Promise<LoginResponse> {
 export function getMe(): Promise<CurrentUser> {
   return apiRequest<CurrentUser>('/auth/me');
 }
+
+// TENANT_OWNER accounts also suspend the whole business — see auth.service.ts.
+export function deleteAccount(): Promise<void> {
+  return apiRequest<void>('/auth/me', { method: 'DELETE' });
+}

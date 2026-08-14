@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { getMe, login as apiLogin, type CurrentUser } from '@/features/auth/api';
+import { deleteAccount as apiDeleteAccount, getMe, login as apiLogin, type CurrentUser } from '@/features/auth/api';
 import { register as apiRegister } from '@/features/onboarding/api';
 import { RegisterInput } from '@/features/onboarding/types';
 import { setUnauthorizedHandler } from '@/lib/api-client';
@@ -14,6 +14,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -65,6 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus('authenticated');
       },
       logout: async () => {
+        await clearStoredAuth();
+        setUser(null);
+        setStatus('unauthenticated');
+      },
+      deleteAccount: async () => {
+        await apiDeleteAccount();
         await clearStoredAuth();
         setUser(null);
         setStatus('unauthenticated');

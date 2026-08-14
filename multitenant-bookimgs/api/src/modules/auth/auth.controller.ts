@@ -18,6 +18,7 @@ export class AuthController extends BaseController {
     this.router.post('/global-login', this.bind(this.globalLogin));
     this.router.post('/login', this.bind(this.login));
     this.router.get('/me', requireAuth, this.bind(this.me));
+    this.router.delete('/me', requireAuth, this.bind(this.deleteAccount));
   }
 
   private async globalLogin(req: Request, res: Response): Promise<void> {
@@ -35,5 +36,10 @@ export class AuthController extends BaseController {
   private async me(req: Request, res: Response): Promise<void> {
     const result = await this.authService.getProfile(req.tenantUser!.id);
     this.ok(res, result);
+  }
+
+  private async deleteAccount(req: Request, res: Response): Promise<void> {
+    await this.authService.deleteAccount(req.tenantUser!.id, req.tenantId, req.tenantUser!.role);
+    this.noContent(res);
   }
 }

@@ -1,15 +1,18 @@
 import { Feather } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingLinkBar } from '@/components/booking-link-bar';
+import { useConfirm } from '@/components/confirm-dialog';
 import { PickerField } from '@/components/picker-field';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast-provider';
 import { Brand, Spacing } from '@/constants/theme';
+import { useAuth } from '@/features/auth/auth-context';
 import { createBrand, getTenantSettings, listBrands, listCountries, updateBrand, updateTenantSettings } from '@/features/brands/api';
 import { pickImage, uploadImage, type PickedImage } from '@/lib/upload';
 
@@ -28,8 +31,12 @@ function tzLabel(tz: string): string {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const confirm = useConfirm();
+  const { user, deleteAccount } = useAuth();
+  const [deleting, setDeleting] = useState(false);
 
   const { data: settings, isLoading: settingsLoading } = useQuery({ queryKey: ['tenant-settings'], queryFn: getTenantSettings });
   const { data: brands, isLoading: brandsLoading } = useQuery({ queryKey: ['brands'], queryFn: listBrands });
@@ -120,6 +127,27 @@ export default function SettingsScreen() {
       toast.showToast(err instanceof Error ? err.message : 'Failed to save settings.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const isOwner = user?.role === 'TENANT_OWNER';
+    const ok = await confirm({
+      title: 'Delete account',
+      message: isOwner
+        ? 'This permanently deletes your login and suspends this business — your public booking page will stop accepting bookings and no one will be able to sign in. Existing booking and customer records are kept for your records but not accessible. This cannot be undone.'
+        : 'This permanently deletes your login. You will no longer be able to sign in, and your name is removed from your account. This cannot be undone.',
+      confirmLabel: 'Delete account',
+      destructive: true,
+    });
+    if (!ok) return;
+
+    setDeleting(true);
+    try {
+      await deleteAccount();
+    } catch (err) {
+      toast.showToast(err instanceof Error ? err.message : 'Could not delete account. Please try again.', 'error');
+      setDeleting(false);
     }
   };
 
@@ -271,6 +299,32 @@ export default function SettingsScreen() {
             <ThemedText type="smallBold" style={styles.saveButtonLabel}>Save changes</ThemedText>
           )}
         </Pressable>
+
+        {/* Legal */}
+        <View style={styles.section}>
+          <Pressable style={styles.legalRow} onPress={() => router.push('/terms')}>
+            <ThemedText style={styles.legalLabel}>Terms & Conditions</ThemedText>
+            <Feather name="chevron-right" size={18} color={Brand.text3} />
+          </Pressable>
+          <View style={styles.legalDivider} />
+          <Pressable style={styles.legalRow} onPress={() => router.push('/privacy')}>
+            <ThemedText style={styles.legalLabel}>Privacy Policy</ThemedText>
+            <Feather name="chevron-right" size={18} color={Brand.text3} />
+          </Pressable>
+        </View>
+
+        {/* Danger zone */}
+        <View style={[styles.section, styles.dangerSection]}>
+          <ThemedText type="smallBold" style={styles.dangerTitle}>Danger zone</ThemedText>
+          <ThemedText type="small" style={styles.dangerSubtitle}>
+            Permanently delete your account. This cannot be undone.
+          </ThemedText>
+          <Pressable style={styles.deleteButton} onPress={handleDeleteAccount} disabled={deleting}>
+            {deleting ? <ActivityIndicator color={Brand.dangerFg} /> : (
+              <ThemedText type="smallBold" style={styles.deleteButtonLabel}>Delete account</ThemedText>
+            )}
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -397,5 +451,40 @@ const styles = StyleSheet.create({
   },
   saveButtonLabel: {
     color: '#ffffff',
+  },
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  legalLabel: {
+    color: Brand.text1,
+  },
+  legalDivider: {
+    height: 1,
+    backgroundColor: Brand.border,
+    marginVertical: Spacing.three,
+  },
+  dangerSection: {
+    borderColor: 'rgba(220,38,38,0.25)',
+    backgroundColor: Brand.dangerBg,
+  },
+  dangerTitle: {
+    color: Brand.dangerFg,
+    fontSize: 16,
+  },
+  dangerSubtitle: {
+    color: Brand.text2,
+    marginTop: -8,
+  },
+  deleteButton: {
+    borderWidth: 1,
+    borderColor: Brand.dangerFg,
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  deleteButtonLabel: {
+    color: Brand.dangerFg,
   },
 });

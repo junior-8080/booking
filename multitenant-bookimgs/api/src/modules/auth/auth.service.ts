@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
+import { PrismaClient, TenantUserRole } from '@prisma/client';
 import { BaseRepository } from '../../core/BaseRepository';
 import { createToken } from '../../middleware/auth.middleware';
 import { UnauthorizedError, NotFoundError } from '../../core/AppError';
@@ -85,5 +86,37 @@ export class AuthService extends BaseRepository {
     const user = await this.db.tenantUser.findFirst({ where: { id: userId } });
     if (!user) throw new NotFoundError('User');
     return { id: user.id, full_name: user.full_name, email: user.email, role: user.role, permissions: user.permissions };
+  }
+
+  // App Store / Play Store require an in-app account deletion path. A
+  // TENANT_OWNER's account is the business's only control panel, so deleting
+  // it also suspends the tenant (blocks the public booking page and every
+  // other login) rather than leaving an unmanageable business running —
+  // TENANT_STAFF deletion only disables that one seat. Existing bookings/
+  // payments/customers are retained (not erased) as business records; PII
+  // on the user row itself is scrubbed and login is permanently blocked.
+  async deleteAccount(userId: string, tenantId: string, role: TenantUserRole): Promise<void> {
+    const user = await this.db.tenantUser.findFirst({ where: { id: userId } });
+    if (!user) throw new NotFoundError('User');
+
+    const anonymizedEmail = `deleted-${userId}@deleted.bookaata.app`;
+    const unusablePasswordHash = await bcrypt.hash(crypto.randomUUID(), 12);
+
+    await this.db.$transaction([
+      this.db.tenantUser.update({
+        where: { id: userId },
+        data: {
+          status: 'DISABLED',
+          email: anonymizedEmail,
+          full_name: 'Deleted user',
+          password_hash: unusablePasswordHash,
+        },
+      }),
+      this.db.pushToken.deleteMany({ where: { tenant_user_id: userId } }),
+    ]);
+
+    if (role === 'TENANT_OWNER') {
+      await globalPrisma.tenant.update({ where: { id: tenantId }, data: { status: 'SUSPENDED' } });
+    }
   }
 }
