@@ -6,6 +6,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
+import { Button, FormField, Input, Label, PageHeader, Stack, Textarea } from '@/components/ui';
 import type { Service, Brand } from '@/types';
 import { formatAmount } from '@/types';
 
@@ -21,31 +22,6 @@ const EMPTY_FORM = {
   deposit_value: 30,
   is_active: true,
 };
-
-const inp: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 13px',
-  borderRadius: 10,
-  border: '1px solid var(--border)',
-  fontSize: 14,
-  background: 'var(--bg)',
-  outline: 'none',
-  color: 'var(--text-1)',
-  boxSizing: 'border-box',
-};
-
-function Label({ children, opt }: { children: React.ReactNode; opt?: boolean }) {
-  return (
-    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-      {children}
-      {opt && <span style={{ color: 'var(--text-3)', fontWeight: 400, textTransform: 'none', marginLeft: 4 }}>optional</span>}
-    </label>
-  );
-}
-
-function Section({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>;
-}
 
 function Divider() {
   return <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }} />;
@@ -157,31 +133,27 @@ export default function ServicesPage() {
   return (
     <DashboardShell>
       {/* Header */}
-      <div className="page-header-row" style={{ marginBottom: 28 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4, color: 'var(--text-1)' }}>Services</h1>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Manage your bookable services and pricing.</p>
-        </div>
-        {!showForm && (
+      <PageHeader
+        title="Services"
+        subtitle="Manage your bookable services and pricing."
+        action={!showForm && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {inactiveCount > 0 && (
-              <button
+              <Button
                 onClick={() => setShowInactive(v => !v)}
-                style={{ padding: '9px 14px', borderRadius: 9, border: '1px solid var(--border)', background: showInactive ? 'var(--bg-subtle)' : 'var(--surface)', color: 'var(--text-2)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+                aria-pressed={showInactive}
+                style={showInactive ? { background: 'var(--bg-subtle)' } : undefined}
               >
                 {showInactive ? 'Hide inactive' : `Show inactive (${inactiveCount})`}
-              </button>
+              </Button>
             )}
-            <button
-              onClick={openCreate}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            <Button variant="soft" onClick={openCreate}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
               New service
-            </button>
+            </Button>
           </div>
         )}
-      </div>
+      />
 
       {/* Form */}
       {showForm && (
@@ -192,40 +164,43 @@ export default function ServicesPage() {
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>{editing ? 'Edit service' : 'New service'}</div>
               {primaryBrand && <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{primaryBrand.name}</div>}
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowForm(false)}
-              style={{ background: 'var(--bg-subtle)', border: 'none', cursor: 'pointer', color: 'var(--text-2)', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              aria-label="Close form"
+              style={{ background: 'var(--bg-subtle)', padding: 8 }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </Button>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <Stack as="form" gap={22} onSubmit={handleSubmit} style={{ padding: '22px 24px' }}>
 
             {/* Basics */}
-            <Section>
-              <div>
-                <Label>Service name</Label>
-                <input
+            <Stack>
+              <FormField label="Service name">
+                <Input
                   value={form.name}
                   onChange={e => s('name', e.target.value)}
                   required
-                  style={{ ...inp, fontSize: 15, fontWeight: 500 }}
+                  inset
+                  style={{ fontSize: 15, fontWeight: 500 }}
                   placeholder="e.g. Full Set Acrylic"
                 />
-              </div>
-              <div>
-                <Label opt>Description</Label>
-                <textarea
+              </FormField>
+              <FormField label="Description" optional>
+                <Textarea
                   value={form.description}
                   onChange={e => s('description', e.target.value)}
                   rows={2}
-                  style={{ ...inp, resize: 'none', lineHeight: 1.5 }}
+                  inset
+                  fixed
                   placeholder="Short description shown to clients"
                 />
-              </div>
+              </FormField>
               <div>
-                <Label opt>Photo</Label>
+                <Label optional>Photo</Label>
                 <label style={{ display: 'block', cursor: 'pointer' }}>
                   <div style={{
                     height: 110, borderRadius: 12, overflow: 'hidden', position: 'relative',
@@ -247,40 +222,39 @@ export default function ServicesPage() {
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" onChange={handleImageChange} style={{ display: 'none' }} />
                 </label>
                 {imagePreview && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => { setImageFile(null); setImagePreview(''); s('image_url', ''); }}
-                    style={{ marginTop: 6, border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--danger-fg)', fontWeight: 500, padding: 0 }}
+                    style={{ marginTop: 6, padding: 0, fontSize: 12, color: 'var(--danger-fg)' }}
                   >
                     Remove photo
-                  </button>
+                  </Button>
                 )}
               </div>
-            </Section>
+            </Stack>
 
             <Divider />
 
             {/* Duration & Price */}
             <div className="grid-2">
+              <FormField label="Duration">
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.duration_minutes || ''}
+                  onFocus={e => e.target.select()}
+                  onChange={e => s('duration_minutes', +e.target.value)}
+                  required
+                  inset
+                  suffix="min"
+                />
+              </FormField>
               <div>
-                <Label>Duration</Label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number"
-                    min={1}
-                    value={form.duration_minutes || ''}
-                    onFocus={e => e.target.select()}
-                    onChange={e => s('duration_minutes', +e.target.value)}
-                    required
-                    style={{ ...inp, paddingRight: 48 }}
-                  />
-                  <span style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', pointerEvents: 'none', fontWeight: 500 }}>min</span>
-                </div>
-              </div>
-              <div>
-                <Label>Price</Label>
+                <Label htmlFor="service-price">Price</Label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input
+                  <Input
+                    id="service-price"
                     type="number"
                     min={0}
                     step={0.01}
@@ -288,14 +262,17 @@ export default function ServicesPage() {
                     onFocus={e => e.target.select()}
                     onChange={e => s('price_amount', +e.target.value)}
                     required
-                    style={{ ...inp, flex: 1 }}
+                    inset
+                    style={{ flex: 1 }}
                     placeholder="0.00"
                   />
-                  <input
+                  <Input
                     value={form.price_currency}
                     onChange={e => s('price_currency', e.target.value.toUpperCase())}
                     maxLength={3}
-                    style={{ ...inp, width: 64, textAlign: 'center', fontWeight: 700, fontSize: 13, padding: '10px 8px' }}
+                    inset
+                    aria-label="Currency"
+                    style={{ width: 64, textAlign: 'center', fontWeight: 700, fontSize: 13, padding: '10px 8px' }}
                     placeholder="USD"
                   />
                 </div>
@@ -305,41 +282,31 @@ export default function ServicesPage() {
             <Divider />
 
             {/* Deposit */}
-            <Section>
-              <div>
-                <Label>Deposit type</Label>
+            <Stack>
+              <div role="group" aria-labelledby="deposit-type-label">
+                <Label id="deposit-type-label">Deposit type</Label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(['PERCENTAGE', 'FIXED'] as const).map(type => (
-                    <button
+                    <Button
                       key={type}
-                      type="button"
+                      variant={form.deposit_type === type ? 'soft' : 'secondary'}
+                      size="sm"
+                      aria-pressed={form.deposit_type === type}
                       onClick={() => setForm(p => ({
                         ...p,
                         deposit_type: type,
                         deposit_value: p.deposit_type !== type ? (type === 'PERCENTAGE' ? 30 : 0) : p.deposit_value,
                       }))}
-                      style={{
-                        flex: 1,
-                        padding: '9px 0',
-                        borderRadius: 9,
-                        border: `1.5px solid ${form.deposit_type === type ? 'var(--brand)' : 'var(--border)'}`,
-                        background: form.deposit_type === type ? 'var(--brand-subtle, color-mix(in srgb, var(--brand) 10%, transparent))' : 'var(--bg)',
-                        color: form.deposit_type === type ? 'var(--brand)' : 'var(--text-2)',
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
+                      style={{ flex: 1, fontWeight: 600, ...(form.deposit_type === type ? {} : { background: 'var(--bg)', color: 'var(--text-2)' }) }}
                     >
                       {type === 'PERCENTAGE' ? '% of price' : 'Fixed amount'}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
               <div>
-                <Label>{form.deposit_type === 'PERCENTAGE' ? 'Deposit percentage' : `Deposit amount (${form.price_currency})`}</Label>
-                <div style={{ position: 'relative' }}>
-                  <input
+                <FormField label={form.deposit_type === 'PERCENTAGE' ? 'Deposit percentage' : `Deposit amount (${form.price_currency})`}>
+                  <Input
                     type="number"
                     min={form.deposit_type === 'PERCENTAGE' ? 1 : 0}
                     max={form.deposit_type === 'PERCENTAGE' ? 100 : undefined}
@@ -347,12 +314,10 @@ export default function ServicesPage() {
                     onFocus={e => e.target.select()}
                     onChange={e => s('deposit_value', +e.target.value)}
                     required
-                    style={{ ...inp, paddingRight: 44 }}
+                    inset
+                    suffix={form.deposit_type === 'PERCENTAGE' ? '%' : form.price_currency}
                   />
-                  <span style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', pointerEvents: 'none', fontWeight: 600 }}>
-                    {form.deposit_type === 'PERCENTAGE' ? '%' : form.price_currency}
-                  </span>
-                </div>
+                </FormField>
                 {form.price_amount > 0 && form.deposit_value > 0 && (
                   <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-3)' }}>
                     {'Client pays '}
@@ -365,7 +330,7 @@ export default function ServicesPage() {
                   </div>
                 )}
               </div>
-            </Section>
+            </Stack>
 
             {/* Active toggle (edit only) */}
             {editing && (
@@ -406,32 +371,18 @@ export default function ServicesPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
               {editing ? (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteId(editing)}
-                  style={{ padding: '10px 18px', borderRadius: 9, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
-                >
+                <Button variant="danger" onClick={() => setConfirmDeleteId(editing)}>
                   Delete service
-                </button>
+                </Button>
               ) : <span />}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: 'var(--brand-tint)', color: 'var(--brand-dark)', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontSize: 14, opacity: loading ? 0.7 : 1 }}
-                >
+                <Button onClick={() => setShowForm(false)}>Cancel</Button>
+                <Button type="submit" variant="soft" disabled={loading}>
                   {loading ? 'Saving…' : editing ? 'Save changes' : 'Create service'}
-                </button>
+                </Button>
               </div>
             </div>
-          </form>
+          </Stack>
         </div>
       )}
 

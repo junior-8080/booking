@@ -4,14 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '10px 13px', borderRadius: 8,
-  border: '1px solid var(--border)', fontSize: 14,
-  background: 'var(--surface)', outline: 'none',
-  transition: 'border-color 0.15s',
-  color: 'var(--text-1)',
-};
+import { Button, FormField, Input } from '@/components/ui';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,7 +66,7 @@ export default function LoginPage() {
           </p>
 
           {error && (
-            <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div role="alert" style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
               {error}
             </div>
@@ -84,32 +77,21 @@ export default function LoginPage() {
               { label: 'Email address', key: 'email', type: 'email', placeholder: 'you@example.com' },
               { label: 'Password', key: 'password', type: 'password', placeholder: '••••••••' },
             ] as const).map(f => (
-              <div key={f.key}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>{f.label}</label>
-                <input
+              <FormField key={f.key} label={f.label}>
+                <Input
                   type={f.type}
                   value={form[f.key]}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
+                  autoComplete={f.key === 'email' ? 'email' : 'current-password'}
                   required
-                  style={inp}
                 />
-              </div>
+              </FormField>
             ))}
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                marginTop: 4, padding: '11px', borderRadius: 8, border: 'none',
-                background: loading ? 'var(--neutral-bg)' : 'var(--brand-tint)',
-                color: loading ? 'var(--text-3)' : 'var(--brand-dark)', fontSize: 14, fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background 0.15s',
-              }}
-            >
+            <Button type="submit" variant="soft" size="lg" block disabled={loading} style={{ marginTop: 4 }}>
               {loading ? 'Signing in…' : 'Sign in'}
-            </button>
+            </Button>
           </form>
 
           <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-3)', textAlign: 'center' }}>

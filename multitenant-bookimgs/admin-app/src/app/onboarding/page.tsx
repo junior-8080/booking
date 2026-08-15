@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
+import { Button, FormField, Input, Label, Select, Stack, Textarea } from '@/components/ui';
 import type { CountryOption } from '@/types';
 
 function tzLabel(tz: string): string {
@@ -22,13 +23,6 @@ function tzLabel(tz: string): string {
 function slugify(name: string) {
   return name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 48);
 }
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '10px 13px', borderRadius: 8,
-  border: '1px solid var(--border)', fontSize: 14,
-  background: 'var(--surface)', outline: 'none',
-  color: 'var(--text-1)',
-};
 
 const STEPS = [
   { title: 'Business', desc: 'Tell us about your business' },
@@ -191,12 +185,13 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <form onSubmit={step < 2 ? nextStep : handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Stack as="form" gap={16} onSubmit={step < 2 ? nextStep : handleSubmit}>
             {step === 0 && (
               <>
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Business name <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                  <input value={form.business_name} onChange={e => set('business_name', e.target.value)} required minLength={2} placeholder="e.g. Glow Spa" style={inp} />
+                  <FormField label="Business name" required>
+                    <Input value={form.business_name} onChange={e => set('business_name', e.target.value)} required minLength={2} placeholder="e.g. Glow Spa" />
+                  </FormField>
                   {subdomain && (
                     <p style={{ marginTop: 7, fontSize: 12, color: 'var(--text-3)' }}>
                       Booking link:{' '}
@@ -205,40 +200,34 @@ export default function OnboardingPage() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 12 }} className="ob-tz-row">
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Country <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                    <select value={form.country} onChange={e => handleCountryChange(e.target.value)} required style={inp}>
+                  <FormField label="Country" required style={{ flex: 1 }}>
+                    <Select value={form.country} onChange={e => handleCountryChange(e.target.value)} required>
                       {countries.length === 0 && <option value="US">United States</option>}
                       {countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Timezone</label>
-                    <select
+                    </Select>
+                  </FormField>
+                  <FormField label="Timezone" style={{ flex: 1 }}>
+                    <Select
                       value={form.timezone}
                       onChange={e => set('timezone', e.target.value)}
                       disabled={(selectedCountry?.timezones.length ?? 0) <= 1}
-                      style={{ ...inp, opacity: (selectedCountry?.timezones.length ?? 0) <= 1 ? 0.7 : 1 }}
                     >
                       {(selectedCountry?.timezones ?? [form.timezone]).map(tz => (
                         <option key={tz} value={tz}>{tzLabel(tz)}</option>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
                 {selectedCountry && (
                   <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: -8 }}>
                     Prices will be in <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{selectedCountry.currency}</span>. You can change country later in Settings.
                   </p>
                 )}
+                <FormField label="Description" optional>
+                  <Textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="What services do you offer?" rows={3} fixed />
+                </FormField>
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Description <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optional)</span></label>
-                  <textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="What services do you offer?" rows={3} style={{ ...inp, resize: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>
-                    Logo <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optional)</span>
-                  </label>
+                  <Label optional>Logo</Label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                     <div style={{ width: 56, height: 56, borderRadius: 12, border: '1.5px dashed var(--border-2)', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       {logoPreview
@@ -260,55 +249,37 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Your full name <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                  <input value={form.owner_name} onChange={e => set('owner_name', e.target.value)} required minLength={2} placeholder="Your name" style={inp} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Phone number <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                  <input type="tel" value={form.owner_phone} onChange={e => set('owner_phone', e.target.value)} required minLength={6} placeholder="+1 555 000 0000" style={inp} />
-                </div>
+                <FormField label="Your full name" required>
+                  <Input value={form.owner_name} onChange={e => set('owner_name', e.target.value)} required minLength={2} placeholder="Your name" autoComplete="name" />
+                </FormField>
+                <FormField label="Phone number" required>
+                  <Input type="tel" value={form.owner_phone} onChange={e => set('owner_phone', e.target.value)} required minLength={6} placeholder="+1 555 000 0000" autoComplete="tel" />
+                </FormField>
               </>
             )}
 
             {step === 2 && (
               <>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Email address <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                  <input type="email" value={form.email} onChange={e => set('email', e.target.value)} required placeholder="you@example.com" style={inp} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Password <span style={{ color: 'var(--danger-fg)' }}>*</span></label>
-                  <input type="password" value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Min. 8 characters" style={inp} />
-                  <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Use at least 8 characters.</p>
-                </div>
+                <FormField label="Email address" required>
+                  <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} required placeholder="you@example.com" autoComplete="email" />
+                </FormField>
+                <FormField label="Password" required hint="Use at least 8 characters.">
+                  <Input type="password" value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Min. 8 characters" autoComplete="new-password" />
+                </FormField>
               </>
             )}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
               {step > 0 && (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 14, fontWeight: 500, cursor: 'pointer', color: 'var(--text-1)' }}
-                >
+                <Button size="lg" onClick={prevStep} style={{ flex: 1 }}>
                   Back
-                </button>
+                </Button>
               )}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  flex: 2, padding: '11px', borderRadius: 8, border: 'none',
-                  background: loading ? 'var(--border-2)' : 'var(--brand)',
-                  color: '#fff', fontSize: 14, fontWeight: 600,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
-              >
+              <Button type="submit" variant="primary" size="lg" disabled={loading} style={{ flex: 2 }}>
                 {loading ? 'Creating your page…' : step < 2 ? 'Continue' : 'Create booking page'}
-              </button>
+              </Button>
             </div>
-          </form>
+          </Stack>
 
           <p style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: 'var(--text-3)' }}>
             Already have an account?{' '}

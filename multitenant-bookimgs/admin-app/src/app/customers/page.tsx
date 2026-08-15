@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
+import { Input } from '@/components/ui';
 import type { Customer, Booking } from '@/types';
 import { formatAmount } from '@/types';
 
@@ -57,11 +58,13 @@ export default function CustomersPage() {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input
+        <Input
+          type="search"
           value={search}
           onChange={handleSearch}
+          aria-label="Search customers"
           placeholder="Search by name, phone, or email…"
-          style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, background: 'var(--surface)', outline: 'none', color: 'var(--text-1)' }}
+          style={{ paddingLeft: 36 }}
         />
       </div>
 

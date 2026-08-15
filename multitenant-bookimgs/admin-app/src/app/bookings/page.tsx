@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/DashboardShell';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
+import { Input } from '@/components/ui';
 import type { Booking, BookingStatus } from '@/types';
 import { formatAmount } from '@/types';
 
@@ -198,12 +199,14 @@ function BookingRow({ booking, onAction, tenantTimezone }: { booking: Booking; o
 
           {booking.status === 'PENDING' && latestPayment && (
             <div className="booking-actions">
-              <input
+              <Input
+                size="sm"
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}
+                aria-label="Rejection reason"
                 placeholder="Rejection reason (required to reject)"
                 maxLength={300}
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface)', outline: 'none', color: 'var(--text-1)' }}
+                style={{ flex: 1 }}
               />
               <button
                 onClick={confirm}

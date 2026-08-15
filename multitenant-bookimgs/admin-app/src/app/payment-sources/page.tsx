@@ -5,6 +5,7 @@ import { DashboardShell } from '@/components/DashboardShell';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
+import { Badge, Button, Card, EmptyState, FormField, Input, PageHeader, Select, Stack, Textarea } from '@/components/ui';
 import type { PaymentSource } from '@/types';
 
 const TYPES = ['MOBILE_MONEY', 'BANK_TRANSFER', 'ZELLE', 'VENMO', 'CASH_APP', 'PAYPAL', 'CASH', 'OTHER'];
@@ -20,8 +21,6 @@ const TYPE_DETAIL_FIELDS: Record<string, string[]> = {
 };
 
 const EMPTY_FORM = { type: 'MOBILE_MONEY', label: '', instructions: '', details: {} as Record<string, string> };
-
-const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, background: 'var(--surface)', outline: 'none', color: 'var(--text-1)' };
 
 export default function PaymentSourcesPage() {
   const [sources, setSources] = useState<PaymentSource[]>([]);
@@ -81,102 +80,91 @@ export default function PaymentSourcesPage() {
 
   return (
     <DashboardShell>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4 }}>Payment Sources</h1>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Configure how clients pay their deposit.</p>
-        </div>
-        <button
-          onClick={openCreate}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 8, border: '1px solid var(--brand)', background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-          Add source
-        </button>
-      </div>
+      <PageHeader
+        title="Payment Sources"
+        subtitle="Configure how clients pay their deposit."
+        action={
+          <Button variant="soft" onClick={openCreate}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            Add source
+          </Button>
+        }
+      />
 
       {showForm && (
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: 24, border: '1px solid var(--border)', marginBottom: 20, boxShadow: 'var(--shadow)' }}>
+        <Card raised style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>{editing ? 'Edit payment source' : 'New payment source'}</h2>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
+            <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} aria-label="Close form" style={{ padding: 4 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </Button>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Type</label>
-                <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value, details: {} }))} style={inp}>
+          <Stack as="form" onSubmit={handleSubmit}>
+            <div className="grid-2">
+              <FormField label="Type">
+                <Select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value, details: {} }))}>
                   {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] ?? t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>Label</label>
-                <input value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} required placeholder="e.g. MTN MoMo — Main" style={inp} />
-              </div>
+                </Select>
+              </FormField>
+              <FormField label="Label">
+                <Input value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} required placeholder="e.g. MTN MoMo — Main" />
+              </FormField>
             </div>
 
             {detailFields.length > 0 && (
               <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '14px 16px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>Details shown to client</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="grid-2">
                   {detailFields.map(f => (
-                    <div key={f}>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 5, color: 'var(--text-1)' }}>{f.replace(/_/g, ' ')}</label>
-                      <input value={form.details[f] ?? ''} onChange={e => setForm(p => ({ ...p, details: { ...p.details, [f]: e.target.value } }))} style={inp} placeholder={f} />
-                    </div>
+                    <FormField key={f} label={f.replace(/_/g, ' ')}>
+                      <Input value={form.details[f] ?? ''} onChange={e => setForm(p => ({ ...p, details: { ...p.details, [f]: e.target.value } }))} placeholder={f} />
+                    </FormField>
                   ))}
                 </div>
               </div>
             )}
 
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)' }}>
-                Client instructions <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optional)</span>
-              </label>
-              <textarea value={form.instructions} onChange={e => setForm(p => ({ ...p, instructions: e.target.value }))} rows={2} style={{ ...inp, resize: 'none' }} placeholder="e.g. Include your booking code in the transfer note" />
-            </div>
+            <FormField label="Client instructions" optional>
+              <Textarea value={form.instructions} onChange={e => setForm(p => ({ ...p, instructions: e.target.value }))} rows={2} fixed placeholder="e.g. Include your booking code in the transfer note" />
+            </FormField>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-              <button type="button" onClick={() => setShowForm(false)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}>Cancel</button>
-              <button type="submit" disabled={loading} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
+              <Button onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={loading}>
                 {loading ? 'Saving…' : editing ? 'Save changes' : 'Add source'}
-              </button>
+              </Button>
             </div>
-          </form>
-        </div>
+          </Stack>
+        </Card>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Stack gap={6}>
         {sources.length === 0 && !showForm && (
-          <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--text-3)' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }}><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
-            <div style={{ fontSize: 14 }}>No payment sources configured yet.</div>
-          </div>
+          <EmptyState
+            icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>}
+            message="No payment sources configured yet."
+          />
         )}
         {sources.map(ps => (
-          <div key={ps.id} style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+          <Card key={ps.id} tight style={{ display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-1)' }}>{ps.label}</span>
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--neutral-bg)', color: 'var(--neutral-fg)', fontWeight: 500 }}>{TYPE_LABELS[ps.type] ?? ps.type}</span>
-                {!ps.is_active && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--danger-bg)', color: 'var(--danger-fg)', fontWeight: 500 }}>Inactive</span>}
+                <Badge>{TYPE_LABELS[ps.type] ?? ps.type}</Badge>
+                {!ps.is_active && <Badge tone="danger">Inactive</Badge>}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {Object.entries(ps.details).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join(' · ') || 'No details'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => handleToggle(ps)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>
-                {ps.is_active ? 'Disable' : 'Enable'}
-              </button>
-              <button onClick={() => openEdit(ps)} style={{ padding: '7px 13px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Edit</button>
-              <button onClick={() => setConfirmDeleteId(ps.id)} style={{ padding: '7px 13px', borderRadius: 7, border: 'none', background: 'var(--danger-bg)', color: 'var(--danger-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Delete</button>
+              <Button size="sm" onClick={() => handleToggle(ps)}>{ps.is_active ? 'Disable' : 'Enable'}</Button>
+              <Button size="sm" onClick={() => openEdit(ps)}>Edit</Button>
+              <Button size="sm" variant="danger" onClick={() => setConfirmDeleteId(ps.id)}>Delete</Button>
             </div>
-          </div>
+          </Card>
         ))}
-      </div>
+      </Stack>
 
       <ConfirmModal
         open={!!confirmDeleteId}

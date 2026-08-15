@@ -5,22 +5,8 @@ import { DashboardShell } from '@/components/DashboardShell';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
 import { uploadToR2 } from '@/lib/upload';
+import { Button, Card, FormField, Input, PageHeader, Select, Stack, Textarea } from '@/components/ui';
 import type { TenantSettings, CountryOption, Brand } from '@/types';
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '10px 13px', borderRadius: 8,
-  border: '1px solid var(--border)', fontSize: 14,
-  background: 'var(--surface)', outline: 'none',
-  color: 'var(--text-1)',
-};
-
-const lbl: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-1)',
-};
-
-const section: React.CSSProperties = {
-  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24,
-};
 
 function tzLabel(tz: string): string {
   const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? tz;
@@ -149,22 +135,15 @@ export default function SettingsPage() {
 
   return (
     <DashboardShell>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', marginBottom: 4 }}>Settings</h1>
-        <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Manage your profile, location, and booking rules.</p>
-      </div>
+      <PageHeader title="Settings" subtitle="Manage your profile, location, and booking rules." />
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 14 }}>Loading…</div>
       ) : settings && (
-        <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 28 }}>
+        <Stack gap={28} style={{ maxWidth: 560 }}>
 
           {/* ── Profile ─────────────────────────────────────────── */}
-          <section style={section}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Profile</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 20 }}>
-              Shown to customers on your public booking page.
-            </p>
+          <Card as="section" title="Profile" subtitle="Shown to customers on your public booking page.">
 
             {/* Logo avatar */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 20 }}>
@@ -189,166 +168,133 @@ export default function SettingsPage() {
                 <p style={{ fontSize: 13, fontWeight: 500, margin: 0, color: 'var(--text-1)' }}>Business logo</p>
                 <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0, lineHeight: 1.5 }}>JPG, PNG or WebP. <br />Recommended 400×400px.</p>
                 <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                  <button onClick={() => logoInputRef.current?.click()} style={{ padding: '7px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--text-1)' }}>
+                  <Button size="sm" onClick={() => logoInputRef.current?.click()}>
                     {logoPreview ? 'Change' : 'Upload'}
-                  </button>
+                  </Button>
                   {logoPreview && (
-                    <button onClick={handleRemoveLogo} style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--danger-fg)' }}>
+                    <Button size="sm" variant="ghost" onClick={handleRemoveLogo} style={{ color: 'var(--danger-fg)' }}>
                       Remove
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={lbl}>Display name</label>
-                <input
+            <Stack gap={16}>
+              <FormField label="Display name">
+                <Input
                   value={profileForm.name}
                   onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))}
                   placeholder="e.g. Glow Spa"
-                  style={inp}
                 />
-              </div>
-              <div>
-                <label style={lbl}>Tagline <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>
-                <textarea
+              </FormField>
+              <FormField label="Tagline" optional>
+                <Textarea
                   value={profileForm.description}
                   onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))}
                   placeholder="A short line about your business that customers see when they book"
                   rows={2}
-                  style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
                 />
-              </div>
-              <div>
-                <label style={lbl}>WhatsApp number <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>
-                <input
+              </FormField>
+              <FormField
+                label="WhatsApp number"
+                optional
+                hint={'Include your country code. Shown as a “Message us” button on your public booking page.'}
+              >
+                <Input
                   type="tel"
                   value={profileForm.whatsapp_number}
                   onChange={e => setProfileForm(p => ({ ...p, whatsapp_number: e.target.value }))}
                   placeholder="e.g. +1 555 000 0000"
-                  style={inp}
                 />
-                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Include your country code. Shown as a &quot;Message us&quot; button on your public booking page.</p>
-              </div>
-              <div>
-                <label style={lbl}>Terms & Conditions <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(optional)</span></label>
-                <textarea
+              </FormField>
+              <FormField
+                label="Terms & Conditions"
+                optional
+                hint={'Shown as a “T&C” button on your public booking page.'}
+              >
+                <Textarea
                   value={profileForm.terms_conditions}
                   onChange={e => setProfileForm(p => ({ ...p, terms_conditions: e.target.value }))}
                   placeholder="Enter your booking terms, cancellation policy, or anything customers should agree to before booking."
                   rows={6}
-                  style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }}
+                  style={{ lineHeight: 1.6 }}
                 />
-                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Shown as a "T&C" button on your public booking page.</p>
-              </div>
-              <div>
-                <label style={lbl}>Booking link</label>
+              </FormField>
+              <FormField label="Booking link">
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ ...inp, flex: 1, color: 'var(--text-2)', background: 'var(--surface-2, var(--surface))', cursor: 'default', userSelect: 'all' }}>
+                  <div className="ui-field" style={{ flex: 1, color: 'var(--text-2)', cursor: 'default', userSelect: 'all' }}>
                     bookaata.app/book/{settings.subdomain}
                   </div>
-                  <button
-                    onClick={copyLink}
-                    style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 13, fontWeight: 500, cursor: 'pointer', color: copied ? 'var(--brand)' : 'var(--text-1)', whiteSpace: 'nowrap' }}
-                  >
+                  <Button size="sm" onClick={copyLink} style={{ color: copied ? 'var(--brand)' : undefined }}>
                     {copied ? '✓ Copied' : 'Copy link'}
-                  </button>
+                  </Button>
                 </div>
-              </div>
-            </div>
-          </section>
+              </FormField>
+            </Stack>
+          </Card>
 
           {/* ── Location & currency ──────────────────────────────── */}
-          <section style={section}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Location & currency</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>
-              Your timezone controls when booking slots appear. Currency follows your country.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={lbl}>Country</label>
-                <select value={settingsForm.country} onChange={e => handleCountryChange(e.target.value)} style={inp}>
+          <Card as="section" title="Location & currency" subtitle="Your timezone controls when booking slots appear. Currency follows your country.">
+            <Stack gap={16}>
+              <FormField label="Country">
+                <Select value={settingsForm.country} onChange={e => handleCountryChange(e.target.value)}>
                   {countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Timezone</label>
-                <select
+                </Select>
+              </FormField>
+              <FormField label="Timezone">
+                <Select
                   value={settingsForm.timezone}
                   onChange={e => setSettingsForm(p => ({ ...p, timezone: e.target.value }))}
                   disabled={(selectedCountry?.timezones.length ?? 0) <= 1}
-                  style={{ ...inp, opacity: (selectedCountry?.timezones.length ?? 0) <= 1 ? 0.7 : 1 }}
                 >
                   {(selectedCountry?.timezones ?? [settingsForm.timezone]).map(tz => (
                     <option key={tz} value={tz}>{tzLabel(tz)}</option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Currency</label>
-                <input value={selectedCountry?.currency ?? settings.default_currency} disabled style={{ ...inp, opacity: 0.7, cursor: 'not-allowed', width: 120 }} />
-                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Set automatically from your country.</p>
-              </div>
-            </div>
-          </section>
+                </Select>
+              </FormField>
+              <FormField label="Currency" hint="Set automatically from your country.">
+                <Input value={selectedCountry?.currency ?? settings.default_currency} disabled style={{ width: 120 }} />
+              </FormField>
+            </Stack>
+          </Card>
 
           {/* ── Booking rules ────────────────────────────────────── */}
-          <section style={section}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Booking rules</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>
-              How long clients have to pay, and how long you have to confirm.
-            </p>
+          <Card as="section" title="Booking rules" subtitle="How long clients have to pay, and how long you have to confirm.">
             <div className="settings-rules-row">
-              <div style={{ flex: 1 }}>
-                <label style={lbl}>Slot hold time</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number" min={5} max={240}
-                    value={settingsForm.slot_hold_minutes || ''}
-                    onFocus={e => e.target.select()}
-                    onChange={e => setSettingsForm(p => ({ ...p, slot_hold_minutes: +e.target.value }))}
-                    style={{ ...inp, paddingRight: 44 }}
-                  />
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', pointerEvents: 'none' }}>min</span>
-                </div>
-                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Time clients get to send their deposit.</p>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={lbl}>Confirmation SLA</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number" min={1} max={168}
-                    value={settingsForm.booking_confirmation_sla_hours || ''}
-                    onFocus={e => e.target.select()}
-                    onChange={e => setSettingsForm(p => ({ ...p, booking_confirmation_sla_hours: +e.target.value }))}
-                    style={{ ...inp, paddingRight: 44 }}
-                  />
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', pointerEvents: 'none' }}>hrs</span>
-                </div>
-                <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>Your target for reviewing payments.</p>
-              </div>
+              <FormField label="Slot hold time" hint="Time clients get to send their deposit." style={{ flex: 1 }}>
+                <Input
+                  type="number" min={5} max={240}
+                  value={settingsForm.slot_hold_minutes || ''}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setSettingsForm(p => ({ ...p, slot_hold_minutes: +e.target.value }))}
+                  suffix="min"
+                />
+              </FormField>
+              <FormField label="Confirmation SLA" hint="Your target for reviewing payments." style={{ flex: 1 }}>
+                <Input
+                  type="number" min={1} max={168}
+                  value={settingsForm.booking_confirmation_sla_hours || ''}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setSettingsForm(p => ({ ...p, booking_confirmation_sla_hours: +e.target.value }))}
+                  suffix="hrs"
+                />
+              </FormField>
             </div>
-          </section>
+          </Card>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handleSave}
               disabled={saving || profileForm.name.trim().length < 2}
-              style={{
-                padding: '11px 28px', borderRadius: 8, border: 'none',
-                background: saving || profileForm.name.trim().length < 2 ? 'var(--border-2, #e5e7eb)' : 'var(--brand)',
-                color: saving || profileForm.name.trim().length < 2 ? 'var(--text-3)' : '#fff',
-                fontSize: 14, fontWeight: 600,
-                cursor: saving ? 'not-allowed' : 'pointer',
-              }}
             >
               {saving ? 'Saving…' : 'Save changes'}
-            </button>
+            </Button>
           </div>
 
-        </div>
+        </Stack>
       )}
     </DashboardShell>
   );

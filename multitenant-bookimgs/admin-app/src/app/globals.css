@@ -35,6 +35,11 @@
   --shadow-sm:   0 1px 2px rgba(0,0,0,0.05);
   --shadow:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md:   0 4px 12px rgba(0,0,0,0.08);
+
+  /* Focus ring. Scoped surfaces (e.g. a tenant-branded booking page)
+     can override --focus-ring locally to match their own accent. */
+  --focus-ring:  var(--brand);
+  --focus-halo:  var(--brand-tint);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -56,11 +61,190 @@ input, textarea, select { font-family: inherit; }
 
 ::selection { background: var(--brand-tint); }
 
+/* ── Focus ───────────────────────────────────────────────────
+   :focus-visible only fires for keyboard/AT navigation, so mouse
+   clicks are unaffected.
+
+   These are !important because controls across the app set
+   `outline: 'none'` in inline styles, which would otherwise win on
+   specificity. Keeping the override here means a control can never
+   lose its focus ring by being styled locally. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Text controls sit flush inside cards, where an offset ring reads as
+   a detached halo. Tighten it and lean on a border + glow instead. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0 !important;
+  border-color: var(--focus-ring) !important;
+  box-shadow: 0 0 0 3px var(--focus-halo);
+}
+
+/* Windows High Contrast Mode ignores custom colors — fall back to the
+   system highlight so the ring survives. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ════════════════════════════════════════════════════════════
+   UI PRIMITIVES
+   Backing styles for src/components/ui/. Keep visual values here
+   rather than in inline style objects so that :hover, :disabled and
+   :focus-visible are expressible, and so a control's look lives in
+   exactly one place.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Button ──────────────────────────────────────────────── */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ui-btn:disabled { cursor: not-allowed; }
+
+.ui-btn--sm { padding: 7px 13px;  font-size: 13px; font-weight: 500; }
+.ui-btn--md { padding: 9px 18px;  font-size: 14px; }
+.ui-btn--lg { padding: 11px 28px; font-size: 14px; }
+
+.ui-btn--primary          { background: var(--brand); color: #fff; }
+.ui-btn--primary:hover:not(:disabled)   { background: var(--brand-dark); }
+.ui-btn--primary:disabled { background: var(--border-2); color: var(--text-3); }
+
+.ui-btn--secondary        { background: var(--surface); border-color: var(--border); color: var(--text-1); font-weight: 500; }
+.ui-btn--secondary:hover:not(:disabled) { background: var(--bg-subtle); }
+.ui-btn--secondary:disabled { opacity: 0.55; }
+
+.ui-btn--soft             { background: var(--brand-tint); border-color: var(--brand); color: var(--brand-dark); }
+.ui-btn--soft:hover:not(:disabled)      { background: var(--brand-light); }
+.ui-btn--soft:disabled    { background: var(--neutral-bg); border-color: transparent; color: var(--text-3); }
+
+.ui-btn--danger           { background: var(--danger-bg); color: var(--danger-fg); font-weight: 500; }
+.ui-btn--danger:hover:not(:disabled)    { background: color-mix(in srgb, var(--danger-fg) 14%, transparent); }
+.ui-btn--danger:disabled  { opacity: 0.55; }
+
+.ui-btn--ghost            { background: none; color: var(--text-2); font-weight: 500; }
+.ui-btn--ghost:hover:not(:disabled)     { background: var(--bg-subtle); color: var(--text-1); }
+.ui-btn--ghost:disabled   { opacity: 0.55; }
+
+.ui-btn--block { width: 100%; }
+
+/* ── Field (input / textarea / select) ───────────────────── */
+.ui-field {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+/* Suppress the UA ring only for non-keyboard focus — the global
+   :focus-visible rule above still paints ours on top. */
+.ui-field:focus { outline: none; }
+.ui-field:disabled { opacity: 0.7; cursor: not-allowed; }
+.ui-field::placeholder { color: var(--text-3); }
+
+.ui-field--sm { padding: 9px 12px; font-size: 13px; }
+
+/* Shrink to content — for inline controls like time pickers in a row. */
+.ui-field--auto { width: auto; }
+
+/* Inset fields sit on a raised card and read better recessed. */
+.ui-field--inset { background: var(--bg); }
+
+textarea.ui-field { resize: vertical; line-height: 1.5; }
+textarea.ui-field.ui-field--fixed { resize: none; }
+
+/* Wrapper for a field with a trailing unit ("min", "hrs", "%"). */
+.ui-field-wrap { position: relative; }
+.ui-field-wrap .ui-field { padding-right: 44px; }
+.ui-field-suffix {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  pointer-events: none;
+}
+/* Tighten the gutter on small fields so short numeric inputs stay narrow. */
+.ui-field-wrap:has(.ui-field--sm) .ui-field   { padding-right: 34px; }
+.ui-field-wrap:has(.ui-field--sm) .ui-field-suffix { right: 9px; font-size: 11px; }
+
+/* ── Label / hint ────────────────────────────────────────── */
+.ui-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+}
+.ui-label__optional { margin-left: 4px; font-weight: 400; color: var(--text-3); }
+.ui-label__required { margin-left: 4px; color: var(--danger-fg); }
+.ui-hint { margin-top: 6px; font-size: 12px; color: var(--text-3); line-height: 1.5; }
+
+/* ── Card ────────────────────────────────────────────────── */
+.ui-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+.ui-card--tight  { padding: 14px 18px; }
+.ui-card--raised { box-shadow: var(--shadow); }
+.ui-card__title  { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.ui-card__sub    { font-size: 13px; color: var(--text-2); margin-bottom: 18px; }
+
+/* ── Badge ───────────────────────────────────────────────── */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ui-badge--neutral { background: var(--neutral-bg); color: var(--neutral-fg); }
+.ui-badge--success { background: var(--success-bg); color: var(--success-fg); }
+.ui-badge--danger  { background: var(--danger-bg);  color: var(--danger-fg); }
+.ui-badge--warning { background: var(--warning-bg); color: var(--warning-fg); }
+.ui-badge--info    { background: var(--info-bg);    color: var(--info-fg); }
+.ui-badge--brand   { background: var(--brand-tint); color: var(--brand); }
+
+/* ── Page header / empty state ───────────────────────────── */
+.ui-page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 4px; }
+.ui-page-sub   { font-size: 14px; color: var(--text-2); }
+.ui-empty      { text-align: center; padding: 64px 0; color: var(--text-3); font-size: 14px; }
+.ui-empty__icon { margin: 0 auto 12px; display: block; opacity: 0.4; }
+
+/* ── Stack ───────────────────────────────────────────────── */
+.ui-stack { display: flex; flex-direction: column; }
 
 /* ── Toasts ──────────────────────────────────────────────── */
 @keyframes toast-in {

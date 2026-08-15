@@ -5,6 +5,7 @@ import { DashboardShell } from '@/components/DashboardShell';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
+import { Input, Select } from '@/components/ui';
 import type { Service } from '@/types';
 
 type AskConfirm = (title: string, message: string, confirmLabel: string, action: () => Promise<void>) => void;
@@ -28,11 +29,6 @@ interface Exception {
   end_time: string | null;
   reason: string | null;
 }
-
-const inp: React.CSSProperties = {
-  padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border)',
-  fontSize: 13, background: 'var(--bg)', outline: 'none', color: 'var(--text-1)',
-};
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -91,37 +87,35 @@ function RangeForm({
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Opens</div>
-          <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} style={inp} />
+          <Input type="time" size="sm" inset auto value={form.start_time} onChange={e => set('start_time', e.target.value)} />
         </div>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Closes</div>
-          <input type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)} style={inp} />
+          <Input type="time" size="sm" inset auto value={form.end_time} onChange={e => set('end_time', e.target.value)} />
         </div>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Seats per slot</div>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="number" min={1}
-              value={form.capacity || ''}
-              onFocus={e => e.target.select()}
-              onChange={e => set('capacity', +e.target.value)}
-              style={{ ...inp, width: 72, paddingRight: 36 }}
-            />
-            <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-3)', pointerEvents: 'none' }}>ppl</span>
-          </div>
+          <Input
+            type="number" min={1}
+            size="sm" inset
+            value={form.capacity || ''}
+            onFocus={e => e.target.select()}
+            onChange={e => set('capacity', +e.target.value)}
+            suffix="ppl"
+            style={{ width: 72 }}
+          />
         </div>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Slot</div>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="number" min={5} step={5}
-              value={form.slot_duration_minutes || ''}
-              onFocus={e => e.target.select()}
-              onChange={e => set('slot_duration_minutes', +e.target.value)}
-              style={{ ...inp, width: 72, paddingRight: 32 }}
-            />
-            <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-3)', pointerEvents: 'none' }}>min</span>
-          </div>
+          <Input
+            type="number" min={5} step={5}
+            size="sm" inset
+            value={form.slot_duration_minutes || ''}
+            onFocus={e => e.target.select()}
+            onChange={e => set('slot_duration_minutes', +e.target.value)}
+            suffix="min"
+            style={{ width: 72 }}
+          />
         </div>
       </div>
       {error && <div style={{ fontSize: 12, color: 'var(--danger-fg)' }}>{error}</div>}
@@ -376,31 +370,31 @@ function ExceptionForm({ serviceId, onAdded, onCancel }: { serviceId: string; on
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Date</div>
-          <input type="date" value={form.date} onChange={e => set('date', e.target.value)} required style={{ ...inp, width: '100%', boxSizing: 'border-box' }} />
+          <Input type="date" size="sm" inset value={form.date} onChange={e => set('date', e.target.value)} required />
         </div>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Type</div>
-          <select value={form.type} onChange={e => set('type', e.target.value)} style={{ ...inp, width: '100%', boxSizing: 'border-box' }}>
+          <Select size="sm" inset value={form.type} onChange={e => set('type', e.target.value)}>
             <option value="BLOCKED">Closed — block all slots</option>
             <option value="CUSTOM_HOURS">Custom hours</option>
-          </select>
+          </Select>
         </div>
       </div>
       {form.type === 'CUSTOM_HOURS' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Opens</div>
-            <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} required style={{ ...inp, width: '100%', boxSizing: 'border-box' }} />
+            <Input type="time" size="sm" inset value={form.start_time} onChange={e => set('start_time', e.target.value)} required />
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Closes</div>
-            <input type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)} required style={{ ...inp, width: '100%', boxSizing: 'border-box' }} />
+            <Input type="time" size="sm" inset value={form.end_time} onChange={e => set('end_time', e.target.value)} required />
           </div>
         </div>
       )}
       <div>
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reason <span style={{ fontWeight: 400 }}>(optional)</span></div>
-        <input value={form.reason} onChange={e => set('reason', e.target.value)} placeholder="e.g. Public holiday, staff training…" style={{ ...inp, width: '100%', boxSizing: 'border-box' }} />
+        <Input size="sm" inset value={form.reason} onChange={e => set('reason', e.target.value)} placeholder="e.g. Public holiday, staff training…" />
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <button type="button" onClick={onCancel} style={{ padding: '7px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--text-1)' }}>Cancel</button>
