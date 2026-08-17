@@ -5,7 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Sidebar } from './Sidebar';
 import { adminApi } from '@/lib/api';
-import { usePushNotificationRegistration } from '@/features/notifications/register';
+import { useAutoPushRegistration } from '@/features/notifications/register';
+import { InstallPrompt } from './InstallPrompt';
 
 const PRIMARY_NAV = [
   {
@@ -50,7 +51,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  usePushNotificationRegistration(true);
+  useAutoPushRegistration(true);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.replace('/login'); return; }
@@ -76,6 +77,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="dash-main" style={{ flex: 1, minWidth: 0, padding: '36px 40px', overflow: 'auto' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <InstallPrompt />
           {children}
         </div>
       </main>

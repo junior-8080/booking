@@ -15,43 +15,64 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return output;
 }
 
-// Mirrors mobile-app/src/features/notifications/register.ts — runs once per
-// authenticated session, requests permission, subscribes to Web Push via the
-// service worker (@serwist/next registers it automatically), and registers
-// the subscription with the backend so this browser can receive tenant
-// alerts (new booking, proof submitted, booking expired).
-export function usePushNotificationRegistration(enabled: boolean): void {
+function getVapidKey(): Uint8Array<ArrayBuffer> | null {
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidPublicKey) {
+    console.warn('[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not configured — skipping push registration');
+    return null;
+  }
+  return urlBase64ToUint8Array(vapidPublicKey);
+}
+
+async function subscribeAndRegister(): Promise<void> {
+  const applicationServerKey = getVapidKey();
+  if (!applicationServerKey) return;
+
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+  }
+  await adminApi.registerPushSubscription(subscription.toJSON());
+}
+
+// Runs once per authenticated session. Only re-registers a subscription when
+// the browser already has notification permission granted (e.g. returning
+// user, or a fresh service worker after a deploy) — never prompts. Asking
+// for permission is a separate, user-triggered action (see
+// requestPushPermissionAndRegister) surfaced via the install/notify banner,
+// not something to spring on a page load.
+export function useAutoPushRegistration(enabled: boolean): void {
   useEffect(() => {
     if (!enabled) return;
     if (typeof window === 'undefined') return;
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
 
-    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidPublicKey) {
-      console.warn('[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not configured — skipping push registration');
-      return;
-    }
-
-    (async () => {
-      if (Notification.permission === 'denied') return;
-      if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
-      }
-
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        let subscription = await registration.pushManager.getSubscription();
-        if (!subscription) {
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-          });
-        }
-        await adminApi.registerPushSubscription(subscription.toJSON());
-      } catch (err) {
-        console.warn('[push] failed to register subscription with backend', err);
-      }
-    })();
+    subscribeAndRegister().catch((err) => {
+      console.warn('[push] failed to refresh subscription with backend', err);
+    });
   }, [enabled]);
+}
+
+// User-triggered: requests notification permission, and if granted,
+// subscribes + registers with the backend. Returns whether it ended up
+// granted, so the caller (the install/notify banner) can update its UI.
+export async function requestPushPermissionAndRegister(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+
+  if (Notification.permission === 'denied') return false;
+  if (Notification.permission !== 'granted') {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return false;
+  }
+
+  try {
+    await subscribeAndRegister();
+    return true;
+  } catch (err) {
+    console.warn('[push] failed to register subscription with backend', err);
+    return false;
+  }
 }
