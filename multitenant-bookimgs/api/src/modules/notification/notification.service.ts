@@ -1,6 +1,7 @@
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { PrismaClient } from '@prisma/client';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
+import webPush from 'web-push';
 import { BaseRepository } from '../../core/BaseRepository';
 import { SMSProvider } from './providers/SMSProvider.interface';
 import { TwilioUSProvider } from './providers/TwilioUSProvider';
@@ -174,17 +175,51 @@ export class NotificationService extends BaseRepository {
 
   // Pushes go to every device the tenant's staff have registered — anyone
   // with the app installed can act on it, not just one designated user.
+  // Two delivery paths share one table: Expo for the mobile app (ios/android),
+  // web-push for the admin-app PWA (platform = 'web').
   private async sendPush(title: string, body: string, data: Record<string, unknown>): Promise<void> {
-    const tokens = await this.db.pushToken.findMany({ select: { token: true } });
-    const validTokens = tokens.map(t => t.token).filter(t => Expo.isExpoPushToken(t));
-    if (validTokens.length === 0) return;
+    const tokens = await this.db.pushToken.findMany({
+      select: { id: true, token: true, platform: true, p256dh: true, auth: true },
+    });
+    if (tokens.length === 0) return;
 
-    const messages: ExpoPushMessage[] = validTokens.map(token => ({ to: token, title, body, data, sound: 'default' }));
-    const chunks = this.expo.chunkPushNotifications(messages);
-    for (const chunk of chunks) {
-      const tickets = await this.expo.sendPushNotificationsAsync(chunk);
-      const err = tickets.find(t => t.status === 'error');
-      if (err) throw new Error(`Expo push error: ${'message' in err ? err.message : 'unknown'}`);
+    const expoTokens = tokens.filter(t => t.platform !== 'web' && Expo.isExpoPushToken(t.token));
+    const webSubscriptions = tokens.filter(t => t.platform === 'web' && t.p256dh && t.auth);
+
+    if (expoTokens.length > 0) {
+      const messages: ExpoPushMessage[] = expoTokens.map(t => ({ to: t.token, title, body, data, sound: 'default' }));
+      const chunks = this.expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
+        const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+        const err = tickets.find(t => t.status === 'error');
+        if (err) throw new Error(`Expo push error: ${'message' in err ? err.message : 'unknown'}`);
+      }
+    }
+
+    if (webSubscriptions.length > 0) {
+      if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+        console.warn('[NotificationService] VAPID keys not configured — skipping web push');
+        return;
+      }
+      webPush.setVapidDetails(env.VAPID_SUBJECT, env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
+      const payload = JSON.stringify({ title, body, data });
+
+      await Promise.all(webSubscriptions.map(async (sub) => {
+        try {
+          await webPush.sendNotification(
+            { endpoint: sub.token, keys: { p256dh: sub.p256dh!, auth: sub.auth! } },
+            payload,
+          );
+        } catch (err) {
+          const statusCode = (err as { statusCode?: number }).statusCode;
+          if (statusCode === 404 || statusCode === 410) {
+            // Browser revoked or expired this subscription — stop retrying it.
+            await this.db.pushToken.delete({ where: { id: sub.id } }).catch(() => {});
+          } else {
+            throw err;
+          }
+        }
+      }));
     }
   }
 }

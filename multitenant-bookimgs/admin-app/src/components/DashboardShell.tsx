@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Sidebar } from './Sidebar';
 import { adminApi } from '@/lib/api';
+import { usePushNotificationRegistration } from '@/features/notifications/register';
 
 const PRIMARY_NAV = [
   {
@@ -48,6 +49,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  usePushNotificationRegistration(true);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.replace('/login'); return; }

@@ -14,6 +14,12 @@ build/
 .next/
 out/
 
+# Serwist-generated service worker (admin-app PWA) — regenerated on every
+# `next build`/`next dev`, not source. The public/manifest.webmanifest and
+# public/icon-*.png files next to it ARE source and stay tracked.
+admin-app/public/sw.js
+admin-app/public/sw.js.map
+
 # ── TypeScript ───────────────────────────────────────────
 *.tsbuildinfo
 
@@ -46,6 +52,7 @@ coverage/
 
 booking-saas-requirements.mds
 changes-v1.md
+changes-v2.md
 workflow.md
 
 bugsReported

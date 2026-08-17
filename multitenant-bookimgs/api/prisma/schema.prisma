@@ -219,8 +219,14 @@ model PushToken {
   id             String   @id @default(uuid()) @db.Uuid
   tenant_id      String   @db.Uuid
   tenant_user_id String   @db.Uuid
+  // Expo push token for 'ios'/'android'; the Web Push subscription endpoint
+  // URL for 'web' — either way it's the per-device unique string.
   token          String
   platform       String
+  // Web Push only (platform = 'web'): subscription.keys.p256dh/auth,
+  // required alongside `token` (the endpoint) to send via web-push.
+  p256dh         String?
+  auth           String?
   created_at     DateTime @default(now()) @db.Timestamptz
 
   tenant      Tenant     @relation(fields: [tenant_id], references: [id], onDelete: Cascade)

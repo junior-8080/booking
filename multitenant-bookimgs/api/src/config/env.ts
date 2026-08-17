@@ -41,6 +41,13 @@ const EnvSchema = z.object({
   // Callback URL after Paystack checkout (your admin app billing page)
   BILLING_CALLBACK_URL: z.string().url().optional(),
 
+  // Web push (admin-app PWA) — generate via `npx web-push generate-vapid-keys`.
+  // Optional like PAYSTACK_SECRET_KEY: without it, sendPush just skips WEB
+  // subscriptions (Expo push to the mobile app still works either way).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:noreply@bookimgs.app'),
+
   // App base URL for subdomain resolution
   APP_BASE_DOMAIN: z.string().default('localhost'),
 

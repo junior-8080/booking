@@ -5,7 +5,9 @@ interface RegisterPushTokenDTO {
   tenant_id: string;
   tenant_user_id: string;
   token: string;
-  platform: 'ios' | 'android';
+  platform: 'ios' | 'android' | 'web';
+  p256dh?: string;
+  auth?: string;
 }
 
 export class TenantUserService extends BaseRepository {
@@ -21,8 +23,14 @@ export class TenantUserService extends BaseRepository {
         tenant_user_id: data.tenant_user_id,
         token: data.token,
         platform: data.platform,
+        p256dh: data.p256dh ?? null,
+        auth: data.auth ?? null,
       },
-      update: { platform: data.platform },
+      update: {
+        platform: data.platform,
+        p256dh: data.p256dh ?? null,
+        auth: data.auth ?? null,
+      },
     } as Parameters<typeof this.db.pushToken.upsert>[0]);
   }
 }

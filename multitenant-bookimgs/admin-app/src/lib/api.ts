@@ -145,4 +145,11 @@ export const adminApi = {
     fetch(`${API_BASE}/countries`)
       .then(r => r.json())
       .then(j => (j.data ?? []) as import('../types').CountryOption[]),
+
+  // Push notifications (Web Push subscription for this PWA)
+  registerPushSubscription: (subscription: PushSubscriptionJSON) =>
+    request('/tenant-users/me/push-token', {
+      method: 'POST',
+      body: JSON.stringify({ platform: 'web', subscription }),
+    }),
 };

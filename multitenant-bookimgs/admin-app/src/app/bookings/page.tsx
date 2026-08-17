@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
 import { useToast } from '@/components/ToastProvider';
 import { adminApi } from '@/lib/api';
@@ -84,12 +85,18 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BookingRow({ booking, onAction, tenantTimezone }: { booking: Booking; onAction: () => void; tenantTimezone: string }) {
-  const [expanded, setExpanded] = useState(false);
+function BookingRow({ booking, onAction, tenantTimezone, autoExpand }: { booking: Booking; onAction: () => void; tenantTimezone: string; autoExpand?: boolean }) {
+  const [expanded, setExpanded] = useState(!!autoExpand);
   const [rejectReason, setRejectReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+
+  // Deep-linked here from a push notification tap — open and bring into view.
+  useEffect(() => {
+    if (autoExpand) rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [autoExpand]);
 
   const latestPayment = booking.payments.at(-1);
 
@@ -118,7 +125,13 @@ function BookingRow({ booking, onAction, tenantTimezone }: { booking: Booking; o
   };
 
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+    <div
+      ref={rowRef}
+      style={{
+        background: 'var(--surface)', borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
+        border: autoExpand ? '1.5px solid var(--brand)' : '1px solid var(--border)',
+      }}
+    >
       <button
         onClick={() => setExpanded(e => !e)}
         style={{ width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -232,8 +245,21 @@ function BookingRow({ booking, onAction, tenantTimezone }: { booking: Booking; o
 }
 
 export default function BookingsPage() {
+  return (
+    <Suspense>
+      <BookingsPageInner />
+    </Suspense>
+  );
+}
+
+function BookingsPageInner() {
+  const searchParams = useSearchParams();
+  const highlightRef = searchParams.get('ref');
+
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [tab, setTab] = useState<BookingStatus | ''>('PENDING');
+  // A push notification tap needs to find its booking regardless of status,
+  // so land on "All" rather than the default "Pending" filter when deep-linked.
+  const [tab, setTab] = useState<BookingStatus | ''>(highlightRef ? '' : 'PENDING');
   const [loading, setLoading] = useState(true);
   const [subdomain, setSubdomain] = useState('');
   const [copied, setCopied] = useState(false);
@@ -338,7 +364,7 @@ export default function BookingsPage() {
             <div style={{ fontSize: 14 }}>No bookings found</div>
           </div>
         ) : (
-          bookings.map(b => <BookingRow key={b.id} booking={b} onAction={load} tenantTimezone={tenantTimezone} />)
+          bookings.map(b => <BookingRow key={b.id} booking={b} onAction={load} tenantTimezone={tenantTimezone} autoExpand={!!highlightRef && b.reference_code === highlightRef} />)
         )}
       </div>
     </DashboardShell>
