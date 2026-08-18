@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import { tenantResolutionMiddleware } from './middleware/tenantResolution.middleware';
 import { errorHandlerMiddleware } from './middleware/errorHandler.middleware';
+import { requireInternalApiKey } from './middleware/auth.middleware';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/auth.service';
@@ -93,13 +94,16 @@ export function createApp() {
     ctrl.router(req, res, next);
   });
 
-  // Subscriptions — public, no tenant header required (internal use)
-  app.use('/api/subscriptions', (req, res, next) => {
+  // Subscriptions — internal admin CRUD, no tenant JWT to check here (runs
+  // before tenant resolution). Gated by INTERNAL_API_KEY, not tenant-facing.
+  app.use('/api/subscriptions', requireInternalApiKey, (req, res, next) => {
     const ctrl = new SubscriptionController(new SubscriptionService());
     ctrl.router(req, res, next);
   });
 
-  // Subscription plans catalog — public
+  // Subscription plans catalog — reads are public (admin-app/mobile-app billing
+  // screens fetch the active plan list unauthenticated); writes are gated
+  // per-route inside the controller.
   app.use('/api/subscription-plans', (req, res, next) => {
     const ctrl = new SubscriptionPlanController(new SubscriptionPlanService());
     ctrl.router(req, res, next);

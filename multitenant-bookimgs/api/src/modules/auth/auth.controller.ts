@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { AuthService } from './auth.service';
 import { requireAuth } from '../../middleware/auth.middleware';
+import { loginRateLimiter } from '../../middleware/rateLimit.middleware';
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -15,8 +16,8 @@ export class AuthController extends BaseController {
   }
 
   protected registerRoutes(): void {
-    this.router.post('/global-login', this.bind(this.globalLogin));
-    this.router.post('/login', this.bind(this.login));
+    this.router.post('/global-login', loginRateLimiter, this.bind(this.globalLogin));
+    this.router.post('/login', loginRateLimiter, this.bind(this.login));
     this.router.get('/me', requireAuth, this.bind(this.me));
     this.router.delete('/me', requireAuth, this.bind(this.deleteAccount));
   }

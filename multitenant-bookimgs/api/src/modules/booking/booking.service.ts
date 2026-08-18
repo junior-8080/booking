@@ -1,4 +1,4 @@
-import { PrismaClient, BookingStatus } from '@prisma/client';
+import { PrismaClient, BookingStatus, Prisma } from '@prisma/client';
 import { BaseRepository } from '../../core/BaseRepository';
 import { ConflictError, NotFoundError, ValidationError } from '../../core/AppError';
 import { bookingExpiryQueue, notificationsQueue, NotificationJob } from '../../infrastructure/queue';
@@ -68,19 +68,6 @@ export class BookingService extends BaseRepository {
     });
     const capacity = range?.capacity ?? 1;
 
-    // Count active bookings overlapping this slot and enforce capacity
-    const overlapCount = await this.db.booking.count({
-      where: {
-        service_id: params.serviceId,
-        status: { in: ['PENDING', 'BOOKED'] },
-        slot_start: { lt: slotEnd },
-        slot_end: { gt: params.slotStart },
-      },
-    });
-    if (overlapCount >= capacity) {
-      throw new ConflictError('This slot is fully booked. Please choose another time.');
-    }
-
     const customer = await this.customerService.findOrCreate(params.customer);
 
     const requiredAmount = this.serviceService.computeDepositAmount(
@@ -91,20 +78,18 @@ export class BookingService extends BaseRepository {
 
     const referenceCode = await generateUniqueRef();
 
-    const booking = await this.db.booking.create({
-      data: {
-        customer_id: customer.id,
-        service_id: params.serviceId,
-        slot_start: params.slotStart,
-        slot_end: slotEnd,
-        status: 'PENDING',
-        required_amount: requiredAmount,
-        required_currency: service.price_currency,
-        reference_code: referenceCode,
-        hold_expires_at: holdExpiresAt,
-        client_notes: params.clientNotes ?? null,
-      },
-    } as Parameters<typeof this.db.booking.create>[0]);
+    const booking = await this.reserveSlot({
+      serviceId: params.serviceId,
+      slotStart: params.slotStart,
+      slotEnd,
+      capacity,
+      customerId: customer.id,
+      requiredAmount,
+      currency: service.price_currency,
+      referenceCode,
+      holdExpiresAt,
+      clientNotes: params.clientNotes,
+    });
 
     // Schedule expiry job
     await bookingExpiryQueue.add(
@@ -153,6 +138,67 @@ export class BookingService extends BaseRepository {
     } satisfies NotificationJob);
 
     return { booking, customer };
+  }
+
+  // Runs the overlap-capacity check and the booking insert inside a single
+  // SERIALIZABLE transaction, so two concurrent requests for the same slot
+  // can't both pass the count check before either commits (overbooking).
+  // Postgres aborts the loser with a serialization failure (P2034), which we
+  // retry a couple of times before finally reporting the slot as taken.
+  private async reserveSlot(input: {
+    serviceId: string;
+    slotStart: Date;
+    slotEnd: Date;
+    capacity: number;
+    customerId: string;
+    requiredAmount: number;
+    currency: string;
+    referenceCode: string;
+    holdExpiresAt: Date;
+    clientNotes?: string;
+  }) {
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await this.db.$transaction(
+          async (tx) => {
+            const overlapCount = await tx.booking.count({
+              where: {
+                service_id: input.serviceId,
+                status: { in: ['PENDING', 'BOOKED'] },
+                slot_start: { lt: input.slotEnd },
+                slot_end: { gt: input.slotStart },
+              },
+            });
+            if (overlapCount >= input.capacity) {
+              throw new ConflictError('This slot is fully booked. Please choose another time.');
+            }
+
+            return tx.booking.create({
+              data: {
+                customer_id: input.customerId,
+                service_id: input.serviceId,
+                slot_start: input.slotStart,
+                slot_end: input.slotEnd,
+                status: 'PENDING',
+                required_amount: input.requiredAmount,
+                required_currency: input.currency,
+                reference_code: input.referenceCode,
+                hold_expires_at: input.holdExpiresAt,
+                client_notes: input.clientNotes ?? null,
+              },
+            } as Parameters<typeof tx.booking.create>[0]);
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+      } catch (err) {
+        const isSerializationFailure = err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034';
+        if (!isSerializationFailure) throw err;
+        if (attempt < MAX_ATTEMPTS) continue;
+        throw new ConflictError('This slot just filled up. Please choose another time.');
+      }
+    }
+    throw new Error('unreachable');
   }
 
   async submitProof(params: {

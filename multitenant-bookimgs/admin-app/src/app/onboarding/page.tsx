@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
-import { uploadToR2 } from '@/lib/upload';
-import { Button, FormField, Input, Label, Select, Stack, Textarea } from '@/components/ui';
+import { Button, FormField, Input, Select, Stack, Textarea } from '@/components/ui';
 import type { CountryOption } from '@/types';
 
 function tzLabel(tz: string): string {
@@ -34,14 +33,12 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    business_name: '', description: '', logo_url: '',
+    business_name: '', description: '',
     country: 'US', timezone: 'America/New_York',
     owner_name: '', owner_phone: '',
     email: '', password: '',
   });
   const [countries, setCountries] = useState<CountryOption[]>([]);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -63,25 +60,26 @@ export default function OnboardingPage() {
     }));
   };
 
-  const nextStep = (e: React.FormEvent) => { e.preventDefault(); setError(''); setStep(s => s + 1); };
-  const prevStep = () => setStep(s => s - 1);
-
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+  const nextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (step === 1) {
+      if (form.owner_name.trim().length < 2) { setError('Please enter your full name.'); return; }
+      if (form.owner_phone.trim().length < 6) { setError('Please enter a valid phone number.'); return; }
+    }
+    setStep(s => s + 1);
   };
+  const prevStep = () => setStep(s => s - 1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
     setLoading(true);
     try {
-      let logo_url = form.logo_url;
-      if (logoFile) {
-        logo_url = await uploadToR2(logoFile, 'logos');
-      }
       const res = await adminApi.register({
         business_name: form.business_name,
         owner_name: form.owner_name,
@@ -91,7 +89,6 @@ export default function OnboardingPage() {
         country: form.country,
         timezone: form.timezone,
         ...(form.description ? { description: form.description } : {}),
-        ...(logo_url ? { logo_url } : {}),
       });
       if (!res.success) throw new Error(res.error ?? 'Registration failed');
       localStorage.setItem('token', res.data.token);
@@ -226,34 +223,16 @@ export default function OnboardingPage() {
                 <FormField label="Description" optional>
                   <Textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="What services do you offer?" rows={3} fixed />
                 </FormField>
-                <div>
-                  <Label optional>Logo</Label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 12, border: '1.5px dashed var(--border-2)', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                      {logoPreview
-                        ? <img src={logoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                      }
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}>
-                        {logoFile ? logoFile.name : 'Upload logo'}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>JPEG, PNG, or WebP · max 5 MB</div>
-                    </div>
-                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleLogoChange} style={{ display: 'none' }} />
-                  </label>
-                </div>
               </>
             )}
 
             {step === 1 && (
               <>
                 <FormField label="Your full name" required>
-                  <Input value={form.owner_name} onChange={e => set('owner_name', e.target.value)} required minLength={2} placeholder="Your name" autoComplete="name" />
+                  <Input value={form.owner_name} onChange={e => set('owner_name', e.target.value)} required placeholder="Your name" autoComplete="name" />
                 </FormField>
                 <FormField label="Phone number" required>
-                  <Input type="tel" value={form.owner_phone} onChange={e => set('owner_phone', e.target.value)} required minLength={6} placeholder="+1 555 000 0000" autoComplete="tel" />
+                  <Input type="tel" value={form.owner_phone} onChange={e => set('owner_phone', e.target.value)} required placeholder="+1 555 000 0000" autoComplete="tel" />
                 </FormField>
               </>
             )}
@@ -264,7 +243,7 @@ export default function OnboardingPage() {
                   <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} required placeholder="you@example.com" autoComplete="email" />
                 </FormField>
                 <FormField label="Password" required hint="Use at least 8 characters.">
-                  <Input type="password" value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Min. 8 characters" autoComplete="new-password" />
+                  <Input type="password" value={form.password} onChange={e => set('password', e.target.value)} required placeholder="Min. 8 characters" autoComplete="new-password" />
                 </FormField>
               </>
             )}

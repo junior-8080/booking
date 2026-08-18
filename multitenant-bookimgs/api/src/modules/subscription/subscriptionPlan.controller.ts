@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { SubscriptionPlanService } from './subscriptionPlan.service';
+import { requireInternalApiKey } from '../../middleware/auth.middleware';
 
 const CreateSchema = z.object({
   name:        z.string().min(1),
@@ -22,10 +23,10 @@ export class SubscriptionPlanController extends BaseController {
   protected registerRoutes(): void {
     this.router.get('/',       this.bind(this.list));
     this.router.get('/:id',    this.bind(this.getOne));
-    this.router.post('/',      this.bind(this.create));
-    this.router.put('/:id',    this.bind(this.replace));
-    this.router.patch('/:id',  this.bind(this.update));
-    this.router.delete('/:id', this.bind(this.remove));
+    this.router.post('/',      requireInternalApiKey, this.bind(this.create));
+    this.router.put('/:id',    requireInternalApiKey, this.bind(this.replace));
+    this.router.patch('/:id',  requireInternalApiKey, this.bind(this.update));
+    this.router.delete('/:id', requireInternalApiKey, this.bind(this.remove));
   }
 
   private async list(req: Request, res: Response): Promise<void> {

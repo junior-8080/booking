@@ -1,6 +1,6 @@
 import { PrismaClient, DepositType } from '@prisma/client';
 import { ServiceRepository } from './service.repository';
-import { ValidationError } from '../../core/AppError';
+import { ValidationError, NotFoundError } from '../../core/AppError';
 
 interface CreateServiceDTO {
   brand_id: string;
@@ -20,8 +20,10 @@ interface UpdateServiceDTO extends Partial<CreateServiceDTO> {
 
 export class ServiceService {
   private readonly repo: ServiceRepository;
+  private readonly db: PrismaClient;
 
   constructor(db: PrismaClient) {
+    this.db = db;
     this.repo = new ServiceRepository(db);
   }
 
@@ -46,6 +48,11 @@ export class ServiceService {
     if (data.deposit_type === 'PERCENTAGE' && (data.deposit_value < 1 || data.deposit_value > 100))
       throw new ValidationError('Deposit percentage must be 1–100');
     if (data.duration_minutes < 1) throw new ValidationError('duration_minutes must be ≥ 1');
+
+    // db is tenant-scoped, so this comes back null if brand_id belongs to
+    // another tenant — prevents attaching a service to someone else's brand.
+    const brand = await this.db.brand.findFirst({ where: { id: data.brand_id } });
+    if (!brand) throw new NotFoundError('Brand');
 
     return this.repo.create({
       brand_id: data.brand_id,

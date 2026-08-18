@@ -221,6 +221,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyFailed, setCopyFailed] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -382,10 +383,17 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
     } catch {}
   };
 
-  const copyText = (text: string, key: string) => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(key);
-    setTimeout(() => setCopied(null), 1500);
+  const copyText = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFailed(null);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      setCopied(null);
+      setCopyFailed(key);
+      setTimeout(() => setCopyFailed(null), 2500);
+    }
   };
 
   const primaryBrand = brands.find(b => b.is_primary) ?? brands[0];
@@ -726,7 +734,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 12, border: `1.5px dashed ${A}`, background: A_TINT, cursor: 'pointer', transition: 'transform 0.12s' }}
                     >
                       <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: 0.5, color: A_DARK }}>{booking.reference_code}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: A }}>{copied === 'ref' ? '✓ Copied' : 'Copy'}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: copyFailed === 'ref' ? DANGER_FG : A }}>{copied === 'ref' ? '✓ Copied' : copyFailed === 'ref' ? 'Couldn’t copy — select manually' : 'Copy'}</span>
                     </button>
                   </div>
 
@@ -773,8 +781,8 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                             <div style={{ fontSize: 11, color: 'oklch(52% 0.02 50)', marginBottom: 2 }}>{k}</div>
                             <div style={{ fontSize: 15, fontWeight: 600 }}>{String(v)}</div>
                           </div>
-                          <button className="tap" onClick={() => copyText(String(v), k)} style={{ border: 'none', background: 'none', padding: '6px 10px', cursor: 'pointer', color: A, fontSize: 12, fontWeight: 600, borderRadius: 8, transition: 'transform 0.12s' }}>
-                            {copied === k ? '✓' : 'Copy'}
+                          <button className="tap" onClick={() => copyText(String(v), k)} style={{ border: 'none', background: 'none', padding: '6px 10px', cursor: 'pointer', color: copyFailed === k ? DANGER_FG : A, fontSize: 12, fontWeight: 600, borderRadius: 8, transition: 'transform 0.12s' }}>
+                            {copied === k ? '✓' : copyFailed === k ? 'Failed' : 'Copy'}
                           </button>
                         </div>
                       ))}
@@ -943,7 +951,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ subdom
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '13px 16px', borderRadius: 14, border: `1.5px dashed ${A}`, background: A_TINT, cursor: 'pointer', transition: 'transform 0.12s' }}
                   >
                     <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700, letterSpacing: 0.3, color: A_DARK }}>{primaryBrand?.whatsapp_number}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: A, flexShrink: 0 }}>{copied === 'whatsapp' ? '✓ Copied' : 'Copy'}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: copyFailed === 'whatsapp' ? DANGER_FG : A, flexShrink: 0 }}>{copied === 'whatsapp' ? '✓ Copied' : copyFailed === 'whatsapp' ? 'Failed' : 'Copy'}</span>
                   </button>
 
                   <a

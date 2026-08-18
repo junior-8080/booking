@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { OnboardingService } from './onboarding.service';
 import { COUNTRY_CODES } from '../../config/countries';
+import { registerRateLimiter } from '../../middleware/rateLimit.middleware';
 
 const RegisterSchema = z.object({
   business_name: z.string().min(2).max(80),
@@ -22,7 +23,7 @@ export class OnboardingController extends BaseController {
   }
 
   protected registerRoutes(): void {
-    this.router.post('/register', this.bind(this.register));
+    this.router.post('/register', registerRateLimiter, this.bind(this.register));
   }
 
   private async register(req: Request, res: Response): Promise<void> {

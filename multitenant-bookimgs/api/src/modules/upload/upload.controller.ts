@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { uploadToR2, UploadCategory } from '../../infrastructure/r2';
-import { ValidationError } from '../../core/AppError';
+import { ValidationError, UnauthorizedError } from '../../core/AppError';
+import { env } from '../../config/env';
 
 const ALLOWED_TYPES = new Set([
   'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
@@ -32,10 +34,18 @@ export class UploadController extends BaseController {
 
     const { category } = BodySchema.parse(req.body);
 
-    // logos and service images are admin-only; proofs are uploaded by public clients
-    if (category !== 'proofs' && !req.headers.authorization?.startsWith('Bearer ')) {
-      res.status(401).json({ success: false, error: 'Authentication required' });
-      return;
+    // logos and service images are admin-only; proofs are uploaded by public clients.
+    // This route runs before tenant resolution, so we can only verify the token's
+    // signature here — not which tenant it belongs to.
+    if (category !== 'proofs') {
+      const header = req.headers.authorization;
+      const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+      if (!token) throw new UnauthorizedError('Authentication required');
+      try {
+        jwt.verify(token, env.JWT_SECRET);
+      } catch {
+        throw new UnauthorizedError('Invalid or expired token');
+      }
     }
 
     const url = await uploadToR2(

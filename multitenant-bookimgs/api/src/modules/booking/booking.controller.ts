@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BaseController } from '../../core/BaseController';
 import { BookingService } from './booking.service';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware';
+import { bookingLookupRateLimiter } from '../../middleware/rateLimit.middleware';
 import { normalizePhone } from '../../utils/phone';
 
 const CreateBookingSchema = z.object({
@@ -38,7 +39,7 @@ export class BookingController extends BaseController {
   protected registerRoutes(): void {
     // Public
     this.router.post('/', this.bind(this.create));
-    this.router.get('/ref/:code', this.bind(this.getByRef));
+    this.router.get('/ref/:code', bookingLookupRateLimiter, this.bind(this.getByRef));
     this.router.post('/:id/proof', this.bind(this.submitProof));
 
     // Dashboard

@@ -9,6 +9,10 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('30d'),
 
+  // Shared secret gating internal-only routes (subscription admin CRUD) that
+  // aren't called by any tenant-facing client and have no tenant JWT to check.
+  INTERNAL_API_KEY: z.string().optional(),
+
   // Email
   EMAIL_PROVIDER: z.enum(['brevo', 'resend', 'sendgrid']).default('brevo'),
   EMAIL_API_KEY: z.string().optional(),

@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { AvailabilityRepository } from './availability.repository';
-import { ValidationError } from '../../core/AppError';
+import { ValidationError, NotFoundError } from '../../core/AppError';
 
 interface SlotInterval {
   start: Date;
@@ -10,9 +10,19 @@ interface SlotInterval {
 
 export class AvailabilityService {
   private readonly repo: AvailabilityRepository;
+  private readonly db: PrismaClient;
 
   constructor(db: PrismaClient) {
+    this.db = db;
     this.repo = new AvailabilityRepository(db);
+  }
+
+  // db is tenant-scoped, so this comes back null if serviceId belongs to
+  // another tenant — prevents attaching availability/exceptions to someone
+  // else's service via a discovered (public) service UUID.
+  private async assertServiceOwnership(serviceId: string): Promise<void> {
+    const service = await this.db.service.findFirst({ where: { id: serviceId } });
+    if (!service) throw new NotFoundError('Service');
   }
 
   async getSchedule(serviceId: string) {
@@ -30,6 +40,7 @@ export class AvailabilityService {
     if (dayOfWeek < 0 || dayOfWeek > 6) throw new ValidationError('day_of_week must be 0–6');
     if (startTime >= endTime) throw new ValidationError('start_time must be before end_time');
     if (capacity < 1) throw new ValidationError('capacity must be at least 1');
+    await this.assertServiceOwnership(serviceId);
     return this.repo.createRange(serviceId, dayOfWeek, startTime, endTime, slotDurationMinutes, capacity);
   }
 
@@ -67,6 +78,7 @@ export class AvailabilityService {
     if (data.type === 'CUSTOM_HOURS' && (!data.start_time || !data.end_time)) {
       throw new ValidationError('start_time and end_time required for CUSTOM_HOURS exception');
     }
+    if (data.service_id) await this.assertServiceOwnership(data.service_id);
     return this.repo.createException({
       service_id: data.service_id ?? null,
       date: data.date,
